@@ -27,8 +27,7 @@ class Enum(Generic["_V"]):
         @classmethod
         def _iter_values(cls):
             for ref in cls._values_by_type[cls]:
-                value = ref()
-                if value:
+                if value := ref():
                     yield value
 
         def __init__(self, value):

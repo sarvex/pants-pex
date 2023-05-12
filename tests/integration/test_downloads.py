@@ -14,9 +14,6 @@ from pex.resolve.resolver_configuration import PipConfiguration
 from pex.testing import IS_LINUX
 from pex.typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    pass
-
 
 def file_artifact(
     url,  # type: str

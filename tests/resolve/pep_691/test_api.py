@@ -128,7 +128,7 @@ def assert_response_error_starts_with(
 ):
     # type: (...) -> None
 
-    with pytest.raises(Client.Error, match=r"^{}.*".format(re.escape(prefix))):
+    with pytest.raises(Client.Error, match=f"^{re.escape(prefix)}.*"):
         client_request(serialize_response(response))
 
 

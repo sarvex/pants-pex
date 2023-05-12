@@ -92,7 +92,7 @@ def get_dep_dist_names_from_pex(pex_path, match_prefix=""):
     """Given an on-disk pex, extract all of the unique first-level paths under `.deps`."""
     with open_zip(pex_path) as pex_zip:
         dep_gen = (f.split(os.sep)[1] for f in pex_zip.namelist() if f.startswith(".deps/"))
-        return set(item for item in dep_gen if item.startswith(match_prefix))
+        return {item for item in dep_gen if item.startswith(match_prefix)}
 
 
 @contextlib.contextmanager
@@ -207,7 +207,9 @@ class WheelBuilder(object):
         if len(dists) == 0:
             raise self.BuildFailure("No distributions were produced!")
         if len(dists) > 1:
-            raise self.BuildFailure("Ambiguous source distributions found: %s" % (" ".join(dists)))
+            raise self.BuildFailure(
+                f'Ambiguous source distributions found: {" ".join(dists)}'
+            )
         return os.path.join(self._wheel_dir, dists[0])
 
 
@@ -356,9 +358,7 @@ class IntegResults(object):
         # type: () -> None
         assert (
             self.return_code == 0
-        ), "integration test failed: return_code={}, output={}, error={}".format(
-            self.return_code, self.output, self.error
-        )
+        ), f"integration test failed: return_code={self.return_code}, output={self.output}, error={self.error}"
 
     def assert_failure(self):
         # type: () -> None
@@ -540,15 +540,12 @@ def ensure_python_venv(
     venv = safe_mkdtemp()
     if _ALL_PY_VERSIONS_TO_VERSION_INFO[version][0] == 3:
         args = [python, "-m", "venv", venv]
-        if system_site_packages:
-            args.append("--system-site-packages")
-        subprocess.check_call(args=args)
     else:
         subprocess.check_call(args=[pip, "install", "virtualenv==16.7.10"])
         args = [python, "-m", "virtualenv", venv, "-q"]
-        if system_site_packages:
-            args.append("--system-site-packages")
-        subprocess.check_call(args=args)
+    if system_site_packages:
+        args.append("--system-site-packages")
+    subprocess.check_call(args=args)
     python, pip = tuple(os.path.join(venv, "bin", exe) for exe in ("python", "pip"))
     if latest_pip:
         subprocess.check_call(args=[pip, "install", "-U", "pip<22.1"])
@@ -693,7 +690,7 @@ def make_env(**kwargs):
     All non-`None` values are converted to strings by apply `str`.
     """
     env = os.environ.copy()
-    env.update((k, str(v)) for k, v in kwargs.items() if v is not None)
+    env |= ((k, str(v)) for k, v in kwargs.items() if v is not None)
     for k, v in kwargs.items():
         if v is None:
             env.pop(k, None)

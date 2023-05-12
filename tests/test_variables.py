@@ -292,7 +292,7 @@ def test_warnings():
     )
     assert tuple(
         sorted(
-            "The `{}` env var is deprecated".format(env_var)
+            f"The `{env_var}` env var is deprecated"
             for env_var in ("PEX_ALWAYS_CACHE", "PEX_FORCE_LOCAL", "PEX_UNZIP")
         )
     ) == tuple(sorted(warning_by_message_first_sentence))

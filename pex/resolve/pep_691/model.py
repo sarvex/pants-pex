@@ -57,9 +57,7 @@ class File(object):
             fingerprint.algorithm: fingerprint for fingerprint in self.hashes
         }
         algorithm = self._select_algorithm(fingerprints_by_algorithm)
-        if algorithm is None:
-            return None
-        return fingerprints_by_algorithm[algorithm]
+        return None if algorithm is None else fingerprints_by_algorithm[algorithm]
 
 
 @attr.s(frozen=True)

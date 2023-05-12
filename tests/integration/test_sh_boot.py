@@ -125,7 +125,7 @@ def interpreters():
             else:
                 yield entry(location)
 
-    return sorted({name: args for name, args in iter_interpreters()}.items())
+    return sorted(dict(iter_interpreters()).items())
 
 
 @pytest.mark.parametrize(

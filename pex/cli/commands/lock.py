@@ -633,10 +633,9 @@ class Lock(OutputMixin, JsonMixin, BuildTimeCommand):
             for resolved_subset in subset_result.subsets
         ]
         if self.options.strict and lock_file.style is not LockStyle.UNIVERSAL:
-            missing_updates = set(lock_file.locked_resolves) - {
+            if missing_updates := set(lock_file.locked_resolves) - {
                 update_request.locked_resolve for update_request in update_requests
-            }
-            if missing_updates:
+            }:
                 return Error(
                     "This lock update is --strict but the following platforms present in "
                     "{lock_file} were not found on the local machine:\n"
@@ -779,15 +778,14 @@ class Lock(OutputMixin, JsonMixin, BuildTimeCommand):
         if not updates:
             return Ok()
 
-        if warnings:
-            if self.options.fingerprint_mismatch in (
-                FingerprintMismatch.WARN,
-                FingerprintMismatch.ERROR,
-            ):
-                message = "\n".join(warnings)
-                if self.options.fingerprint_mismatch is FingerprintMismatch.ERROR:
-                    return Error(message)
-                pex_warnings.warn(message)
+        if warnings and self.options.fingerprint_mismatch in (
+            FingerprintMismatch.WARN,
+            FingerprintMismatch.ERROR,
+        ):
+            message = "\n".join(warnings)
+            if self.options.fingerprint_mismatch is FingerprintMismatch.ERROR:
+                return Error(message)
+            pex_warnings.warn(message)
 
         if dry_run:
             return Error() if dry_run is DryRunStyle.CHECK else Ok()
@@ -802,8 +800,9 @@ class Lock(OutputMixin, JsonMixin, BuildTimeCommand):
             for update in update_requirements
             if update.project_name not in original_locked_project_names
         )
-        constraints_by_project_name.update(
-            (constraint.project_name, constraint) for constraint in update_requirements
+        constraints_by_project_name |= (
+            (constraint.project_name, constraint)
+            for constraint in update_requirements
         )
         for requirement in new_requirements:
             constraints_by_project_name.pop(requirement.project_name, None)

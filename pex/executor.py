@@ -30,8 +30,8 @@ class Executor(object):
         """Indicates failure to execute."""
 
         def __init__(self, msg, cmd, exc=None):
-            super(Executor.ExecutionError, self).__init__(  # noqa
-                "%s while trying to execute `%s`" % (msg, cmd)
+            super(Executor.ExecutionError, self).__init__(
+                f"{msg} while trying to execute `{cmd}`"
             )
             self.executable = cmd.split()[0] if isinstance(cmd, string) else cmd[0]
             self.cmd = cmd
@@ -41,8 +41,8 @@ class Executor(object):
         """Indicates a non-zero exit code."""
 
         def __init__(self, cmd, exit_code, stdout, stderr):
-            super(Executor.NonZeroExit, self).__init__(  # noqa
-                "received exit code %s during execution of `%s`" % (exit_code, cmd), cmd
+            super(Executor.NonZeroExit, self).__init__(
+                f"received exit code {exit_code} during execution of `{cmd}`", cmd
             )
             self.exit_code = exit_code
             self.stdout = stdout

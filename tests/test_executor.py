@@ -67,7 +67,7 @@ def test_executor_execute_not_found(testable):
 def test_executor_execute_nonzero(exit_code):
     # type: (int) -> None
     with pytest.raises(Executor.NonZeroExit) as exc:
-        Executor.execute("exit %s" % exit_code, shell=True)
+        Executor.execute(f"exit {exit_code}", shell=True)
 
     if exit_code > 0:
         assert exc.value.exit_code == exit_code

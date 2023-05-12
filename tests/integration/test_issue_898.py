@@ -36,14 +36,14 @@ def test_top_level_requirements_requires_python_env_markers():
 
         results = run_pex_command(
             args=[
-                "--python={}".format(python27),
-                "--python={}".format(python310),
+                f"--python={python27}",
+                f"--python={python310}",
                 "zipp>=1,<=3.1.0",
-                "--sources-directory={}".format(src_dir),
+                f"--sources-directory={src_dir}",
                 "--entry-point=test_issues_898",
                 "-o",
                 pex_file,
-            ],
+            ]
         )
         results.assert_success()
 
@@ -53,4 +53,4 @@ def test_top_level_requirements_requires_python_env_markers():
             zipp_location = os.path.realpath(output.decode("utf-8").strip())
             assert zipp_location.startswith(
                 pex_root
-            ), "Failed to import zipp from {} under {}".format(pex_file, python)
+            ), f"Failed to import zipp from {pex_file} under {python}"

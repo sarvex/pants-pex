@@ -59,8 +59,7 @@ def get_script_from_distributions(
 ):
     # type: (...) -> Optional[DistributionScript]
     for dist in dists:
-        distribution_script = DistributionScript.find(dist, name)
-        if distribution_script:
+        if distribution_script := DistributionScript.find(dist, name):
             return distribution_script
     return None
 

@@ -57,7 +57,7 @@ class CompatibilityTags(object):
     def from_wheel(cls, wheel):
         # type: (str) -> CompatibilityTags
         wheel_stem, ext = os.path.splitext(os.path.basename(wheel))
-        if ".whl" != ext:
+        if ext != ".whl":
             raise ValueError(
                 "Can only calculate wheel tags from a filename that ends in .whl per "
                 "https://peps.python.org/pep-0427/#file-name-convention, given: {wheel!r}".format(

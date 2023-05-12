@@ -181,7 +181,7 @@ def loads(
             )
 
     required_path_mappings = get("path_mappings", dict, optional=True) or {}
-    given_mappings = set(mapping.name for mapping in path_mappings.mappings)
+    given_mappings = {mapping.name for mapping in path_mappings.mappings}
     unspecified_paths = set(required_path_mappings) - given_mappings
     if unspecified_paths:
         raise PathMappingError(

@@ -454,7 +454,7 @@ def test_configure_resolve_local_platforms_with_complete_platforms(
 
     py38_subset_tags = py38.identity.supported_tags.to_string_list()[:-10]
     # make the platform different
-    py38_subset_tags[0:2] = py38_subset_tags[0:2:-1]
+    py38_subset_tags[:2] = py38_subset_tags[0:2:-1]
     py38_subset_complete = dump_complete_platform(
         "py38_subset",
         py38.identity.env_markers.as_dict(),

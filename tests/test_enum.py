@@ -109,15 +109,15 @@ def test_qualified_name():
         AtomicDirectory
     ), "Expected custom types to be handled."
     expected_prefix = "pex.atomic_directory." if PY2 else "pex.atomic_directory.AtomicDirectory."
-    assert expected_prefix + "finalize" == qualified_name(
+    assert f"{expected_prefix}finalize" == qualified_name(
         AtomicDirectory.finalize
     ), "Expected methods to be handled."
-    assert expected_prefix + "work_dir" == qualified_name(
+    assert f"{expected_prefix}work_dir" == qualified_name(
         AtomicDirectory.work_dir
     ), "Expected @property to be handled."
 
     expected_prefix = "pex.common." if PY2 else "pex.common.PermPreservingZipFile."
-    assert expected_prefix + "zip_entry_from_file" == qualified_name(
+    assert f"{expected_prefix}zip_entry_from_file" == qualified_name(
         PermPreservingZipFile.zip_entry_from_file
     ), "Expected @classmethod to be handled."
 
@@ -127,6 +127,6 @@ def test_qualified_name():
             pass
 
     expected_prefix = "test_enum." if PY2 else "test_enum.test_qualified_name.<locals>.Test."
-    assert expected_prefix + "static" == qualified_name(
+    assert f"{expected_prefix}static" == qualified_name(
         Test.static
     ), "Expected @staticmethod to be handled."

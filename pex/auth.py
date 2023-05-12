@@ -30,7 +30,7 @@ class Machine(object):
                 "Expected a scheme for the BaseURL. Given: {url_info}".format(url_info=url_info)
             )
 
-        if "file" == url_info.scheme:
+        if url_info.scheme == "file":
             return cls(reduced_url="file://{path}".format(path=url_info.path))
 
         if not url_info.hostname:
@@ -91,9 +91,8 @@ class PasswordEntry(object):
             # Don't stomp credentials already embedded in an URL.
             return None
 
-        if self.machine:
-            if Machine.from_url_info(url_info) != self.machine:
-                return None
+        if self.machine and Machine.from_url_info(url_info) != self.machine:
+            return None
 
         scheme, netloc, path, params, query, fragment = url_info
         netloc = "{username}:{password}@{netloc}".format(

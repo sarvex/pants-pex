@@ -89,7 +89,7 @@ def test_pex_builder_preamble():
 
 def test_pex_builder_compilation():
     # type: () -> None
-    with temporary_dir() as td1, temporary_dir() as td2, temporary_dir() as td3:
+    with (temporary_dir() as td1, temporary_dir() as td2, temporary_dir() as td3):
         src = os.path.join(td1, "src.py")
         with open(src, "w") as fp:
             fp.write(exe_main)
@@ -115,7 +115,7 @@ def test_pex_builder_compilation():
             for _, _, files in os.walk(bootstrap_dir):
                 bootstrap_pycs.extend(f for f in files if f.endswith(".pyc"))
             if precompile:
-                assert len(bootstrap_pycs) > 0
+                assert bootstrap_pycs
             else:
                 assert 0 == len(bootstrap_pycs)
 

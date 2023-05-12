@@ -10,7 +10,9 @@ import os
 # kept in-sync with `__init__.py`.
 with open(os.environ.pop("_PEX_PYTHON_VERSIONS_FILE")) as fp:
     PYTHON_FULL_VERSIONS = json.load(fp)
-PYTHON_VERSIONS = sorted(set((version[0], version[1]) for version in PYTHON_FULL_VERSIONS))
+PYTHON_VERSIONS = sorted(
+    {(version[0], version[1]) for version in PYTHON_FULL_VERSIONS}
+)
 
 
 def patch():

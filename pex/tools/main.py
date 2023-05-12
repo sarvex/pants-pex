@@ -45,17 +45,11 @@ class PexTools(Main[PEXCommand]):
 
         pex_prog_path = simplify_pex_path(pex.path()) if pex else None
 
-        # By default, let argparse derive prog from sys.argv[0].
-        prog = None  # type: Optional[str]
-        if pex:
-            prog = "PEX_TOOLS=1 {pex_path}".format(pex_path=pex_prog_path)
-
-        description = "Tools for working with {}.".format(pex_prog_path if pex else "PEX files")
-        subparsers_description = (
-            "{} can be operated on using any of the following subcommands.".format(
-                "The PEX file {}".format(pex_prog_path) if pex else "A PEX file"
-            )
+        prog = "PEX_TOOLS=1 {pex_path}".format(pex_path=pex_prog_path) if pex else None
+        description = (
+            f'Tools for working with {pex_prog_path if pex else "PEX files"}.'
         )
+        subparsers_description = f'{f"The PEX file {pex_prog_path}" if pex else "A PEX file"} can be operated on using any of the following subcommands.'
 
         super(PexTools, self).__init__(
             description=description,
@@ -78,9 +72,7 @@ def main(pex=None):
 
     pex_tools = PexTools(pex=pex)
     try:
-        with pex_tools.parsed_command() as pex_command, TRACER.timed(
-            "Executing PEX_TOOLS {}".format(pex_command.name())
-        ):
+        with (pex_tools.parsed_command() as pex_command, TRACER.timed(f"Executing PEX_TOOLS {pex_command.name()}")):
             if pex is None:
                 pex_file_path = pex_command.options.pex[0]
                 pex_info = PexInfo.from_pex(pex_file_path)

@@ -223,13 +223,12 @@ class Platform(object):
                     if count is None:
                         match = re.match(r"^Compatible tags: (?P<count>\d+)\s+", line)
                         if match:
-                            count = int(match.group("count"))
+                            count = int(match["count"])
                         continue
                     count -= 1
                     if count < 0:
                         raise AssertionError("Expected {} tags but got more.".format(count))
-                    for tag in tags.parse_tag(line.strip()):
-                        yield tag
+                    yield from tags.parse_tag(line.strip())
             finally:
                 if count != 0:
                     raise AssertionError("Finished with count {}.".format(count))

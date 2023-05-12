@@ -60,7 +60,7 @@ def test_clp_arg_file():
         tmpfile.flush()
 
         parser = configure_clp()
-        options = parser.parse_args(args=["@" + tmpfile.name])
+        options = parser.parse_args(args=[f"@{tmpfile.name}"])
         assert options.requirement_files == ["requirements1.txt", "requirements2.txt"]
 
 

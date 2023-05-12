@@ -78,9 +78,7 @@ class bdist_pex(Command):  # noqa
 
         if options.entry_point or options.script or options.pex_name:
             die(
-                "Must not specify entry point, script or output file to --pex-args, given: {}".format(
-                    " ".join(self.pex_args)
-                )
+                f'Must not specify entry point, script or output file to --pex-args, given: {" ".join(self.pex_args)}'
             )
 
         name = self.distribution.get_name()
@@ -102,7 +100,7 @@ class bdist_pex(Command):  # noqa
                 for script_name in console_scripts
             )
         else:
-            target = os.path.join(self.bdist_dir, name + "-" + version + ".pex")
+            target = os.path.join(self.bdist_dir, f"{name}-{version}.pex")
             pex_specs.append((name if name in console_scripts else None, target))
 
         args = ["-m", "pex", package_dir] + options.requirements + self.pex_args
@@ -112,11 +110,11 @@ class bdist_pex(Command):  # noqa
         for script_name, target in pex_specs:
             pex_cmd = args + ["--output-file", target]
             if script_name:
-                log.info("Writing %s to %s" % (script_name, target))
+                log.info(f"Writing {script_name} to {target}")
                 pex_cmd += ["--script", script_name]
             else:
                 # The package has no namesake entry point, so build an environment pex.
-                log.info("Writing environment pex into %s" % target)
+                log.info(f"Writing environment pex into {target}")
 
             cmd, process = PythonInterpreter.get().open_process(
                 args=pex_cmd,
@@ -129,14 +127,10 @@ class bdist_pex(Command):  # noqa
             result = process.returncode
             if result != 0:
                 die(
-                    "Failed to create pex via {}:\n{}".format(
-                        " ".join(cmd), stderr.decode("utf-8")
-                    ),
+                    f'Failed to create pex via {" ".join(cmd)}:\n{stderr.decode("utf-8")}',
                     result,
                 )
             else:
                 log.debug(
-                    "Successfully created pex via {}:\n{}".format(
-                        " ".join(cmd), stderr.decode("utf-8")
-                    )
+                    f'Successfully created pex via {" ".join(cmd)}:\n{stderr.decode("utf-8")}'
                 )

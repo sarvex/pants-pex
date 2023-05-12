@@ -223,9 +223,10 @@ def test_resolve_from_pex_not_found(
         )
     message = str(exec_info.value)
     assert (
-        "Failed to resolve requirements from PEX environment @ {}".format(pex_repository) in message
+        f"Failed to resolve requirements from PEX environment @ {pex_repository}"
+        in message
     )
-    assert "Needed {} compatible dependencies for:".format(py310.platform.tag) in message
+    assert f"Needed {py310.platform.tag} compatible dependencies for:" in message
     assert "1: requests==1.0.0" in message
     assert "But this pex only contains:" in message
     assert "requests-2.25.1-py2.py3-none-any.whl" in message
@@ -288,7 +289,7 @@ def test_resolve_from_pex_constraints(
         )
     message = str(exec_info.value)
     assert "The following constraints were not satisfied by " in message
-    assert " resolved from {}:".format(pex_repository) in message
+    assert f" resolved from {pex_repository}:" in message
     assert "urllib3==1.26.2" in message
 
 

@@ -84,18 +84,16 @@ class LogScrapeJob(Job):
         super(LogScrapeJob, self).__init__(command, process, finalizer=finalizer)
 
     def _check_returncode(self, stderr=None):
-        # type: (Optional[bytes]) -> None
-        activated_analyzers = [
+        if activated_analyzers := [
             analyzer
             for analyzer in self._log_analyzers
             if analyzer.should_collect(self._process.returncode)
-        ]
-        if activated_analyzers:
-            collected = []
+        ]:
             # A process may fail so early that there is no log file to analyze.
             # We assume that if this is the case, the superclass _check_returncode will
             # express the underlying cause of that failure in a way useful to the user.
             if os.path.isfile(self._log):
+                collected = []
                 with open(self._log, "r") as fp:
                     for line in fp:
                         if not activated_analyzers:

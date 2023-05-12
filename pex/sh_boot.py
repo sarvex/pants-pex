@@ -157,8 +157,9 @@ def create_sh_boot_script(
         )
     )
 
-    venv_dir = pex_info.raw_venv_dir(pex_file=pex_name, interpreter=interpreter)
-    if venv_dir:
+    if venv_dir := pex_info.raw_venv_dir(
+        pex_file=pex_name, interpreter=interpreter
+    ):
         pex_installed_path = venv_dir
     else:
         pex_hash = pex_info.pex_hash

@@ -217,7 +217,7 @@ class PEXBuilder(object):
 
     def _ensure_unfrozen(self, name="Operation"):
         if self._frozen:
-            raise self.ImmutablePEX("%s is not allowed on a frozen PEX!" % name)
+            raise self.ImmutablePEX(f"{name} is not allowed on a frozen PEX!")
 
     @property
     def interpreter(self):
@@ -359,9 +359,9 @@ class PEXBuilder(object):
             if os.path.exists(pex):
                 distributions.update(PEX(pex, interpreter=self._interpreter).resolve())
 
-        # Check if 'script' is a console_script.
-        dist_entry_point = get_entry_point_from_console_script(script, distributions)
-        if dist_entry_point:
+        if dist_entry_point := get_entry_point_from_console_script(
+            script, distributions
+        ):
             self.set_entry_point(str(dist_entry_point.entry_point))
             TRACER.log(
                 "Set entrypoint to console_script {!r} in {!r}".format(
@@ -370,9 +370,7 @@ class PEXBuilder(object):
             )
             return
 
-        # Check if 'script' is an ordinary script.
-        dist_script = get_script_from_distributions(script, distributions)
-        if dist_script:
+        if dist_script := get_script_from_distributions(script, distributions):
             if self._pex_info.entry_point:
                 raise self.InvalidExecutableSpecification(
                     "Cannot set both entry point and script of PEX!"
@@ -413,7 +411,7 @@ class PEXBuilder(object):
         :param shebang: The shebang line. If it does not include the leading '#!' it will be added.
         :type shebang: str
         """
-        self._shebang = "#!%s" % shebang if not shebang.startswith("#!") else shebang
+        self._shebang = f"#!{shebang}" if not shebang.startswith("#!") else shebang
 
     def set_header(self, header):
         # type: (str) -> None
@@ -456,9 +454,7 @@ class PEXBuilder(object):
         :keyword fingerprint: The fingerprint of the distribution, if already known.
         """
         if dist.location in self._distributions:
-            TRACER.log(
-                "Skipping adding {} - already added from {}".format(dist, dist.location), V=9
-            )
+            TRACER.log(f"Skipping adding {dist} - already added from {dist.location}", V=9)
             return
         self._ensure_unfrozen("Adding a distribution")
         dist_name = os.path.basename(dist.location)
@@ -466,8 +462,7 @@ class PEXBuilder(object):
 
         if not os.path.isdir(dist.location):
             raise self.InvalidDistribution(
-                "Unsupported distribution type: {}, pex can only accept dist "
-                "dirs (installed wheels).".format(dist)
+                f"Unsupported distribution type: {dist}, pex can only accept dist dirs (installed wheels)."
             )
         dist_hash = self._add_dist_dir(dist.location, dist_name, fingerprint=fingerprint)
 
@@ -644,9 +639,9 @@ class PEXBuilder(object):
 
         # The PEX building proceeds assuming a user will not race themselves building to a single
         # non-PEX_ROOT output path they requested;
-        tmp_pex = path + "~"
+        tmp_pex = f"{path}~"
         if os.path.exists(tmp_pex):
-            self._logger.warning("Previous binary unexpectedly exists, cleaning: {}".format(path))
+            self._logger.warning(f"Previous binary unexpectedly exists, cleaning: {path}")
             if os.path.isfile(tmp_pex):
                 os.unlink(tmp_pex)
             else:
@@ -715,9 +710,7 @@ class PEXBuilder(object):
         # is not a valid wheel name either.
         def zip_cache_dir(path):
             # type: (str) -> str
-            if compress:
-                return path
-            return os.path.join(path, "un-compressed")
+            return path if compress else os.path.join(path, "un-compressed")
 
         # Zip up the bootstrap which is constant for a given version of Pex.
         bootstrap_hash = pex_info.bootstrap_hash
@@ -776,7 +769,7 @@ class PEXBuilder(object):
         # type: (...) -> None
         with safe_open(filename, "wb") as pexfile:
             assert os.path.getsize(pexfile.name) == 0
-            pexfile.write(to_bytes("{}\n".format(self._shebang)))
+            pexfile.write(to_bytes(f"{self._shebang}\n"))
             if self._header:
                 pexfile.write(to_bytes(self._header))
         with TRACER.timed("Zipping PEX file."):

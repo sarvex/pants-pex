@@ -55,12 +55,11 @@ class Bootstrap(object):
         sys.path[:] = [path for path in sys.path if os.path.realpath(path) != self._realpath]
         sys.path.append(self._sys_path_entry)
 
-        unimported_modules = []
-        for name, module in reversed(sorted(sys.modules.items())):
-            if self.imported_from_bootstrap(module):
-                unimported_modules.append(sys.modules.pop(name))
-
-        return unimported_modules
+        return [
+            sys.modules.pop(name)
+            for name, module in reversed(sorted(sys.modules.items()))
+            if self.imported_from_bootstrap(module)
+        ]
 
     def imported_from_bootstrap(self, module):
         """Return ``True`` if the given ``module`` object was imported from bootstrap code.
@@ -77,12 +76,13 @@ class Bootstrap(object):
 
         # A vendored package.
         path = getattr(module, "__path__", None)
-        if path and any(
-            os.path.realpath(path_item).startswith(self._realpath) for path_item in path
-        ):
-            return True
-
-        return False
+        return bool(
+            path
+            and any(
+                os.path.realpath(path_item).startswith(self._realpath)
+                for path_item in path
+            )
+        )
 
     def __repr__(self):
         return "{cls}(sys_path_entry={sys_path_entry!r})".format(

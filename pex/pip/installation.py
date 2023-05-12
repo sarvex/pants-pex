@@ -132,10 +132,11 @@ def validate_targets(
 ):
     # type: (...) -> None
     all_targets = targets.unique_targets()
-    invalid_targets = [
-        target for target in all_targets if not version.requires_python_applies(target)
-    ]
-    if invalid_targets:
+    if invalid_targets := [
+        target
+        for target in all_targets
+        if not version.requires_python_applies(target)
+    ]:
         raise RequiresPythonError(
             "The Pip requested for {context} was {pip_requirement} but it does not work with "
             "{quantifier} targets selected.\n"
@@ -205,13 +206,13 @@ def get_pip(
         installation.check_python_applies()
         if version is PipVersion.VENDORED:
             pip = Pip(pip_pex=_vendored_installation(interpreter=interpreter))
-        else:
-            if resolver is None:
-                raise ValueError(
-                    "A resolver is required to install {requirement}".format(
-                        requirement=version.requirement
-                    )
+        elif resolver is None:
+            raise ValueError(
+                "A resolver is required to install {requirement}".format(
+                    requirement=version.requirement
                 )
+            )
+        else:
             pip = Pip(
                 pip_pex=_resolved_installation(
                     version=version,

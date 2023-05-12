@@ -89,9 +89,9 @@ def pluralize(
     if count == 1:
         return noun
     if noun[-1] in ("s", "x", "z") or noun[-2:] in ("sh", "ch"):
-        return noun + "es"
+        return f"{noun}es"
     else:
-        return noun + "s"
+        return f"{noun}s"
 
 
 def safe_copy(source, dest, overwrite=False):
@@ -284,8 +284,7 @@ def safe_open(filename, *args, **kwargs):
     ``safe_open`` ensures that the directory components leading up the specified file have been
     created first.
     """
-    parent_dir = os.path.dirname(filename)
-    if parent_dir:
+    if parent_dir := os.path.dirname(filename):
         safe_mkdir(parent_dir)
     return open(filename, *args, **kwargs)  # noqa: T802
 
@@ -320,7 +319,7 @@ def safe_sleep(seconds):
     Until Python 3.5, there was no guarantee that time.sleep() would actually sleep the requested
     time. See https://docs.python.org/3/library/time.html#time.sleep.
     """
-    if sys.version_info[0:2] >= (3, 5):
+    if sys.version_info[:2] >= (3, 5):
         time.sleep(seconds)
     else:
         start_time = current_time = time.time()
@@ -381,7 +380,7 @@ def is_script(
     if check_executable and not is_exe(path):
         return False
     with open(path, "rb") as fp:
-        if b"#!" != fp.read(2):
+        if fp.read(2) != b"#!":
             return False
         if not pattern:
             return True
@@ -435,9 +434,8 @@ class Chroot(object):
 
     class ChrootTaggingException(Error):
         def __init__(self, filename, orig_tag, new_tag):
-            super(Chroot.ChrootTaggingException, self).__init__(  # noqa: T800
-                "Trying to add %s to fileset(%s) but already in fileset(%s)!"
-                % (filename, new_tag, orig_tag)
+            super(Chroot.ChrootTaggingException, self).__init__(
+                f"Trying to add {filename} to fileset({new_tag}) but already in fileset({orig_tag})!"
             )
 
     def __init__(self, chroot_base):
@@ -449,7 +447,7 @@ class Chroot(object):
         try:
             safe_mkdir(chroot_base)
         except OSError as e:
-            raise self.Error("Unable to create chroot in %s: %s" % (chroot_base, e))
+            raise self.Error(f"Unable to create chroot in {chroot_base}: {e}")
         self.chroot = chroot_base
         self.filesets = defaultdict(set)  # type: DefaultDict[str, Set[str]]
 
@@ -577,7 +575,7 @@ class Chroot(object):
     def __str__(self):
         return "Chroot(%s {fs:%s})" % (
             self.chroot,
-            " ".join("%s" % foo for foo in self.filesets.keys()),
+            " ".join(f"{foo}" for foo in self.filesets.keys()),
         )
 
     def delete(self):
@@ -622,9 +620,7 @@ class Chroot(object):
             def get_parent_dir(path):
                 # type: (str) -> Optional[str]
                 parent_dir = os.path.normpath(os.path.dirname(path))
-                if parent_dir and parent_dir != os.curdir:
-                    return parent_dir
-                return None
+                return parent_dir if parent_dir and parent_dir != os.curdir else None
 
             written_dirs = set()
 

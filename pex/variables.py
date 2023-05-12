@@ -134,9 +134,7 @@ class DefaultedProperty(Generic["_O", "_P"]):
 
     def _validate(self, instance, value):
         # type: (_O, _P) -> _P
-        if self._validator is None:
-            return value
-        return self._validator(instance, value)
+        return value if self._validator is None else self._validator(instance, value)
 
 
 def defaulted_property(
@@ -199,7 +197,7 @@ class Variables(object):
             try:
                 with open(os.path.expanduser(filename)) as fh:
                     rc_items = map(cls._get_kv, fh)
-                    ret_vars.update(dict(filter(None, rc_items)))
+                    ret_vars |= dict(filter(None, rc_items))
             except IOError:
                 continue
         return ret_vars
@@ -297,9 +295,7 @@ class Variables(object):
     def _maybe_get_path(self, variable):
         # type: (str) -> Optional[str]
         value = self._maybe_get_string(variable)
-        if value is None:
-            return None
-        return os.path.realpath(os.path.expanduser(value))
+        return None if value is None else os.path.realpath(os.path.expanduser(value))
 
     def _get_path(self, variable):
         # type: (str) -> str
@@ -328,11 +324,12 @@ class Variables(object):
         value = self._maybe_get_string(variable)
         if value is None:
             return None
-        if not value and not empty_string_is_cwd:
+        if value or empty_string_is_cwd:
+            return tuple(
+                OrderedSet(os.path.normpath(os.path.expanduser(p)) for p in value.split(os.pathsep))
+            )
+        else:
             return None
-        return tuple(
-            OrderedSet(os.path.normpath(os.path.expanduser(p)) for p in value.split(os.pathsep))
-        )
 
     def strip(self):
         # type: () -> Variables
@@ -504,7 +501,7 @@ class Variables(object):
         try:
             return InheritPath.for_value(self._get_string("PEX_INHERIT_PATH"))
         except ValueError as e:
-            die("Invalid value for PEX_INHERIT_PATH: {}".format(e))
+            die(f"Invalid value for PEX_INHERIT_PATH: {e}")
 
     @defaulted_property(default=False)
     def PEX_INTERPRETER(self):

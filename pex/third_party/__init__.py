@@ -35,22 +35,22 @@ class _Loader(namedtuple("_Loader", ["module_name", "vendor_module_name"])):
         assert fullname in (
             self.module_name,
             self.vendor_module_name,
-        ), "{} got an unexpected module {}".format(self, fullname)
+        ), f"{self} got an unexpected module {fullname}"
         vendored_module = importlib.import_module(self.vendor_module_name)
         sys.modules[fullname] = vendored_module
-        _tracer().log("{} imported via {}".format(fullname, self), V=9)
+        _tracer().log(f"{fullname} imported via {self}", V=9)
         return vendored_module
 
     def unload(self):
         for mod in (self.module_name, self.vendor_module_name):
             if mod in sys.modules:
                 sys.modules.pop(mod)
-                _tracer().log("un-imported {}".format(mod), V=9)
+                _tracer().log(f"un-imported {mod}", V=9)
 
-                submod_prefix = mod + "."
+                submod_prefix = f"{mod}."
                 for submod in sorted(m for m in sys.modules.keys() if m.startswith(submod_prefix)):
                     sys.modules.pop(submod)
-                    _tracer().log("un-imported {}".format(submod), V=9)
+                    _tracer().log(f"un-imported {submod}", V=9)
 
 
 class _Importable(namedtuple("_Importable", ["module", "is_pkg", "path", "prefix"])):
@@ -59,7 +59,7 @@ class _Importable(namedtuple("_Importable", ["module", "is_pkg", "path", "prefix
     def expose(self):
         # type: () -> None
         self._exposed = True
-        _tracer().log("Exposed {}".format(self), V=3)
+        _tracer().log(f"Exposed {self}", V=3)
 
     @property
     def exposed(self):
@@ -68,14 +68,18 @@ class _Importable(namedtuple("_Importable", ["module", "is_pkg", "path", "prefix
 
     def loader_for(self, fullname):
         # type: (str) -> Optional[_Loader]
-        if fullname.startswith(self.prefix + "."):
-            target = fullname[len(self.prefix + ".") :]
-        else:
-            if not self._exposed:
-                return None
+        if fullname.startswith(f"{self.prefix}."):
+            target = fullname[len(f"{self.prefix}."):]
+        elif self._exposed:
             target = fullname
 
-        if target == self.module or self.is_pkg and target.startswith(self.module + "."):
+        else:
+            return None
+        if (
+            target == self.module
+            or self.is_pkg
+            and target.startswith(f"{self.module}.")
+        ):
             vendor_path = (
                 os.path.join(*target.split("."))
                 if not self.path or self.path == os.curdir
@@ -121,11 +125,11 @@ class _ZipIterator(namedtuple("_ZipIterator", ["zipfile_path", "prefix"])):
             # forward slashes. See section 4.4.17 of
             # https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT.
             if zipfile.is_zipfile(path):
-                return cls(zipfile_path=path, prefix="{}/".format(prefix) if prefix else "")
+                return cls(zipfile_path=path, prefix=f"{prefix}/" if prefix else "")
             path_base = os.path.basename(path)
-            prefix = "{}/{}".format(path_base, prefix) if prefix else path_base
+            prefix = f"{path_base}/{prefix}" if prefix else path_base
             path = os.path.dirname(path)
-        raise ValueError("Could not find the zip file housing {}".format(root))
+        raise ValueError(f"Could not find the zip file housing {root}")
 
     def iter_root_modules(self, relpath):
         for package in self._filter_names(relpath, r"(?P<module>[^/]+)\.py", "module"):
@@ -133,20 +137,20 @@ class _ZipIterator(namedtuple("_ZipIterator", ["zipfile_path", "prefix"])):
                 yield package
 
     def iter_root_packages(self, relpath):
-        for package in self._filter_names(relpath, r"(?P<package>[^/]+)/__init__\.py", "package"):
-            yield package
+        yield from self._filter_names(
+            relpath, r"(?P<package>[^/]+)/__init__\.py", "package"
+        )
 
     def _filter_names(self, relpath, pattern, group):
         # We use '/' here because the zip file format spec specifies that paths must use
         # forward slashes. See section 4.4.17 of
         # https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT.
-        relpath_pat = "" if not relpath else "{}/".format(relpath.replace(os.sep, "/"))
-        pat = re.compile(r"^{}{}{}$".format(self.prefix, relpath_pat, pattern))
+        relpath_pat = "" if not relpath else f'{relpath.replace(os.sep, "/")}/'
+        pat = re.compile(f"^{self.prefix}{relpath_pat}{pattern}$")
         with contextlib.closing(zipfile.ZipFile(self.zipfile_path)) as zf:
             for name in zf.namelist():
-                match = pat.match(name)
-                if match:
-                    yield match.group(group)
+                if match := pat.match(name):
+                    yield match[group]
 
 
 class VendorImporter(object):
@@ -214,10 +218,14 @@ class VendorImporter(object):
         vendored_paths = set(cls._vendored_path_items())
         for importer in cls._iter_all_installed_vendor_importers():
             # All Importables for a given VendorImporter will have the same prefix.
-            if importer._importables and importer._importables[0].prefix == prefix:
-                if importer._root == root:
-                    if {importable.path for importable in importer._importables} == vendored_paths:
-                        yield importer
+            if (
+                importer._importables
+                and importer._importables[0].prefix == prefix
+                and importer._root == root
+                and {importable.path for importable in importer._importables}
+                == vendored_paths
+            ):
+                yield importer
 
     @classmethod
     def install_vendored(
@@ -316,7 +324,7 @@ class VendorImporter(object):
         importables = tuple(cls._iter_importables(root=root, path_items=path_items, prefix=prefix))
         vendor_importer = cls(root=root, importables=importables, uninstallable=uninstallable)
         sys.meta_path.insert(0, vendor_importer)
-        _tracer().log("Installed {}".format(vendor_importer), V=3)
+        _tracer().log(f"Installed {vendor_importer}", V=3)
         return vendor_importer
 
     @classmethod
@@ -351,7 +359,7 @@ class VendorImporter(object):
     def uninstall(self):
         """Uninstall this importer if possible and un-import any modules imported by it."""
         if not self._uninstallable:
-            _tracer().log("Not uninstalling {}".format(self), V=9)
+            _tracer().log(f"Not uninstalling {self}", V=9)
             return
 
         if self in sys.meta_path:
@@ -362,7 +370,7 @@ class VendorImporter(object):
             sys.path[:] = [path_item for path_item in sys.path if path_item not in maybe_exposed]
             for loader in self._loaders:
                 loader.unload()
-            _tracer().log("Uninstalled {}".format(self), V=3)
+            _tracer().log(f"Uninstalled {self}", V=3)
 
     # The PEP-302 finder API.
     # See: https://www.python.org/dev/peps/pep-0302/#specification-part-1-the-importer-protocol
@@ -475,11 +483,9 @@ def isolated():
                     and os.path.basename(zip_path) == layout.BOOTSTRAP_DIR
                 ):
                     zip_path = os.path.dirname(zip_path)
-                assert zipfile.is_zipfile(zip_path), (
-                    "Expected the `pex` module to be available via an installed distribution "
-                    "or else via a PEX. Loaded the `pex` module from {} and but the enclosing "
-                    "PEX has an unexpected layout {}".format(pex_path, zip_path)
-                )
+                assert zipfile.is_zipfile(
+                    zip_path
+                ), f"Expected the `pex` module to be available via an installed distribution or else via a PEX. Loaded the `pex` module from {pex_path} and but the enclosing PEX has an unexpected layout {zip_path}"
 
                 pex_package_relpath = (
                     ""
@@ -493,7 +499,7 @@ def isolated():
         with _tracer().timed("Isolating pex"):
             with atomic_directory(isolated_dir) as chroot:
                 if not chroot.is_finalized():
-                    with _tracer().timed("Extracting pex to {}".format(isolated_dir)):
+                    with _tracer().timed(f"Extracting pex to {isolated_dir}"):
                         if pex_zip_paths:
                             pex_zip, pex_package_relpath = pex_zip_paths
                             _isolate_pex_from_zip(
@@ -595,8 +601,7 @@ def expose(dists):
     :raise: :class:`ValueError` if any distributions to expose cannot be found.
     :returns: An iterator of exposed vendored distribution chroot paths.
     """
-    for path in VendorImporter.expose(dists, root=isolated().chroot_path):
-        yield path
+    yield from VendorImporter.expose(dists, root=isolated().chroot_path)
 
 
 # Implicitly install an importer for vendored code on the first import of pex.third_party.

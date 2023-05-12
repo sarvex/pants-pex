@@ -648,10 +648,10 @@ def build_pex(
     pex_info.inject_env = dict(options.inject_env)
     pex_info.inject_args = options.inject_args
     pex_info.venv = bool(options.venv)
-    pex_info.venv_bin_path = options.venv or BinPath.FALSE
     pex_info.venv_copies = options.venv_copies
     pex_info.venv_site_packages_copies = options.venv_site_packages_copies
     pex_info.venv_hermetic_scripts = options.venv_hermetic_scripts
+    pex_info.venv_bin_path = options.venv or BinPath.FALSE
     pex_info.includes_tools = options.include_tools or options.venv
     pex_info.pex_path = options.pex_path.split(os.pathsep) if options.pex_path else ()
     pex_info.ignore_errors = options.ignore_errors
@@ -664,18 +664,7 @@ def build_pex(
     for requirements_pex in options.requirements_pexes:
         pex_builder.add_from_requirements_pex(requirements_pex)
 
-    with TRACER.timed(
-        "Resolving distributions ({})".format(
-            " ".join(
-                itertools.chain.from_iterable(
-                    (
-                        requirement_configuration.requirements or (),
-                        requirement_configuration.requirement_files or (),
-                    )
-                )
-            )
-        )
-    ):
+    with TRACER.timed(f'Resolving distributions ({" ".join(itertools.chain.from_iterable((requirement_configuration.requirements or (), requirement_configuration.requirement_files or ())))})'):
         try:
             if isinstance(resolver_configuration, LockRepositoryConfiguration):
                 lock = try_(resolver_configuration.parse_lock())
@@ -782,7 +771,7 @@ def transform_legacy_arg(arg):
     # Now it takes a string argument, so --inherit-path is invalid.
     # Fix up the args we're about to parse to preserve backwards compatibility.
     if arg == "--inherit-path":
-        return "--inherit-path={}".format(InheritPath.PREFER.value)
+        return f"--inherit-path={InheritPath.PREFER.value}"
     return arg
 
 
@@ -898,14 +887,12 @@ def do_main(
         if not _compatible_with_current_platform(interpreter, targets.platforms):
             log("WARNING: attempting to run PEX with incompatible platforms!", V=1)
             log(
-                "Running on platform {} but built for {}".format(
-                    interpreter.platform, ", ".join(map(str, targets.platforms))
-                ),
+                f'Running on platform {interpreter.platform} but built for {", ".join(map(str, targets.platforms))}',
                 V=1,
             )
 
         log(
-            "Running PEX file at %s with args %s" % (pex_builder.path(), cmdline),
+            f"Running PEX file at {pex_builder.path()} with args {cmdline}",
             V=options.verbosity,
         )
         sys.exit(pex.run(args=list(cmdline), env=env))

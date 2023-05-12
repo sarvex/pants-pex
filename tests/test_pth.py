@@ -45,7 +45,7 @@ def test_iter_pth_paths(mock_exists):
         }  # type: Dict[str, List[str]]
 
         for i, pth_content in enumerate(PTH_TEST_MAPPING):
-            pth_tmp_path = os.path.abspath(os.path.join(tmpdir, "test%s.pth" % i))
+            pth_tmp_path = os.path.abspath(os.path.join(tmpdir, f"test{i}.pth"))
             with open(pth_tmp_path, "wb") as f:
                 f.write(to_bytes(pth_content))
             assert sorted(PTH_TEST_MAPPING[pth_content]) == sorted(

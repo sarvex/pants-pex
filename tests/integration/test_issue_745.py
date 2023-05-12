@@ -34,7 +34,7 @@ def test_extras_isolation():
 
         run_pex_command(
             [
-                "--sources-directory={}".format(src_dir),
+                f"--sources-directory={src_dir}",
                 "--entry-point=test_issues_745",
                 "-o",
                 pex_file,
@@ -53,7 +53,7 @@ def test_extras_isolation():
         run_pex_command(
             [
                 "subprocess32",
-                "--sources-directory={}".format(src_dir),
+                f"--sources-directory={src_dir}",
                 "--entry-point=test_issues_745",
                 "-o",
                 pex_file,

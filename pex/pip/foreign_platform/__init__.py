@@ -73,19 +73,14 @@ class _Issue10050Analyzer(ErrorAnalyzer):
     _platform = attr.ib()  # type: Platform
 
     def analyze(self, line):
-        # type: (str) -> ErrorAnalysis
-        # N.B.: Pip --log output looks like:
-        # 2021-06-20T19:06:00,981 pip._vendor.packaging.markers.UndefinedEnvironmentName: 'python_full_version' does not exist in evaluation environment.
-        match = re.match(
+        if match := re.match(
             r"^[^ ]+ pip._vendor.packaging.markers.UndefinedEnvironmentName: "
             r"(?P<missing_marker>.*)\.$",
             line,
-        )
-        if match:
+        ):
             return self.Complete(
                 ErrorMessage(
-                    "Failed to resolve for platform {}. Resolve requires evaluation of unknown "
-                    "environment marker: {}.".format(self._platform, match.group("missing_marker"))
+                    f'Failed to resolve for platform {self._platform}. Resolve requires evaluation of unknown environment marker: {match["missing_marker"]}.'
                 )
             )
         return self.Continue()
@@ -98,18 +93,17 @@ def patch(target):
 
     analyzer = _Issue10050Analyzer(target.platform)
 
-    patches = []
     patches_dir = safe_mkdtemp()
 
     patched_environment = target.marker_environment.as_dict()
     with open(os.path.join(patches_dir, "markers.json"), "w") as markers_fp:
         json.dump(patched_environment, markers_fp)
-    patches.append(
-        Patch.from_code_resource(__name__, "markers.py", _PEX_PATCHED_MARKERS_FILE=markers_fp.name)
-    )
-
-    compatible_tags = target.supported_tags
-    if compatible_tags:
+    patches = [
+        Patch.from_code_resource(
+            __name__, "markers.py", _PEX_PATCHED_MARKERS_FILE=markers_fp.name
+        )
+    ]
+    if compatible_tags := target.supported_tags:
         patches.append(patch_tags(compatible_tags=compatible_tags, patches_dir=patches_dir))
 
     assert (
@@ -129,7 +123,7 @@ def patch(target):
     )
 
     TRACER.log(
-        "Patching environment markers for {} with {}".format(target, patched_environment),
+        f"Patching environment markers for {target} with {patched_environment}",
         V=3,
     )
     return DownloadObserver(analyzer=analyzer, patch_set=PatchSet(patches=tuple(patches)))

@@ -113,9 +113,7 @@ class Interpreter(OutputMixin, JsonMixin, BuildTimeCommand):
         verbose = self.options.verbose or self.options.tags or self.options.markers
         if self.options.indent and not verbose:
             logger.warning(
-                "Ignoring --indent={} since --verbose mode is not enabled.".format(
-                    self.options.indent
-                )
+                f"Ignoring --indent={self.options.indent} since --verbose mode is not enabled."
             )
         with self.output(self.options) as out:
             for interpreter in interpreters:

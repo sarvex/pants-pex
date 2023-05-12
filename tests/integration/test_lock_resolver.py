@@ -99,15 +99,12 @@ def test_strict_basic(
         requests_version is not None
     ), "Expected the requests pex to contain the requests distribution."
 
-    assert (
-        dict(
-            (project_name, locked_requirement.pin.version)
-            for project_name, locked_requirement in index_lock_artifacts(
-                requests_lock_strict
-            ).items()
-        )
-        == pex_distributions
-    )
+    assert {
+        project_name: locked_requirement.pin.version
+        for project_name, locked_requirement in index_lock_artifacts(
+            requests_lock_strict
+        ).items()
+    } == pex_distributions
 
 
 def test_subset(

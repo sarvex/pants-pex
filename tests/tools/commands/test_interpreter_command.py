@@ -75,7 +75,7 @@ class InterpreterTool(object):
             PEX_PYTHON_PATH=os.pathsep.join(interpreter.binary for interpreter in interpreters),
             PEX_TOOLS="1",
         )
-        environ.update(env)
+        environ |= env
 
         _, stdout, _ = self.interpreter.execute(args=cmd, env=environ)
         return stdout

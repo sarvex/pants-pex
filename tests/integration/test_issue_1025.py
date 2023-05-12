@@ -44,7 +44,7 @@ def test_extras_isolation(create_pth):
         sitedir = os.path.join(tmpdir, "sitedir")
         Executor.execute(cmd=[pip, "install", "--target", sitedir, "ansicolors==1.1.8"])
 
-        pth_path = os.path.join(stdout.strip(), "issues_1025.{}.pth".format(uuid.uuid4().hex))
+        pth_path = os.path.join(stdout.strip(), f"issues_1025.{uuid.uuid4().hex}.pth")
         create_pth(pth_path, sitedir)
 
         pex_file = os.path.join(tmpdir, "isolated.pex")

@@ -118,7 +118,8 @@ def shebang_length_limit(
             raise e
 
     return find_max_length(
-        seed_max=file_path_length_limit - len(os.sep + "script.sh"), is_too_long=shebang_too_long
+        seed_max=file_path_length_limit - len(f"{os.sep}script.sh"),
+        is_too_long=shebang_too_long,
     )
 
 

@@ -97,14 +97,13 @@ class Tailer(Thread):
                 line_bytes = fp.readline()
                 line = line_bytes.decode(self._encoding)
                 for pattern in self._filters:
-                    match = pattern.match(line)
-                    if match:
+                    if match := pattern.match(line):
                         if match.groups():
                             eol = re.search(r"(?P<eol>\r\n|\r|\n)$", line)
                             self._output.write(
                                 "{groups}{eol}".format(
                                     groups="".join(match.groups()),
-                                    eol=eol.group("eol") if eol else "",
+                                    eol=eol["eol"] if eol else "",
                                 ).encode(self._encoding)
                             )
                         else:

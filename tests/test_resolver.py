@@ -45,7 +45,7 @@ def create_sdist(**kwargs):
     dist_dir = safe_mkdtemp()
 
     with make_project(**kwargs) as project_dir:
-        cmd = ["setup.py", "sdist", "--dist-dir={}".format(dist_dir)]
+        cmd = ["setup.py", "sdist", f"--dist-dir={dist_dir}"]
         spawn_python_job(
             args=cmd,
             cwd=project_dir,
@@ -221,14 +221,14 @@ def _parse_requirement(req):
 def test_resolve_extra_setup_py():
     # type: () -> None
     with make_source_dir(
-        name="project1", version="1.0.0", extras_require={"foo": ["project2"]}
-    ) as project1_dir:
+            name="project1", version="1.0.0", extras_require={"foo": ["project2"]}
+        ) as project1_dir:
         project2_wheel = build_wheel(name="project2", version="2.0.0")
         with temporary_dir() as td:
             safe_copy(project2_wheel, os.path.join(td, os.path.basename(project2_wheel)))
 
             installed_dists = local_resolve(
-                requirements=["{}[foo]".format(project1_dir)], find_links=[td]
+                requirements=[f"{project1_dir}[foo]"], find_links=[td]
             )
             assert {_parse_requirement(req) for req in ("project1==1.0.0", "project2==2.0.0")} == {
                 _parse_requirement(installed_dist.distribution.as_requirement())
@@ -560,12 +560,8 @@ def test_pip_proprietary_url_with_markers_issues_1415():
     # type: () -> None
     installed_dists = resolve(
         requirements=[
-            (
-                "https://files.pythonhosted.org/packages/53/18/"
-                "a56e2fe47b259bb52201093a3a9d4a32014f9d85071ad07e9d60600890ca/"
-                "ansicolors-1.1.8-py2.py3-none-any.whl; sys_platform != '{}'".format(sys.platform)
-            ),
-            "ansicolors==1.1.8; sys_platform == '{}'".format(sys.platform),
+            f"https://files.pythonhosted.org/packages/53/18/a56e2fe47b259bb52201093a3a9d4a32014f9d85071ad07e9d60600890ca/ansicolors-1.1.8-py2.py3-none-any.whl; sys_platform != '{sys.platform}'",
+            f"ansicolors==1.1.8; sys_platform == '{sys.platform}'",
         ]
     ).installed_distributions
     assert len(installed_dists) == 1
@@ -574,7 +570,9 @@ def test_pip_proprietary_url_with_markers_issues_1415():
     assert Requirement.parse("ansicolors==1.1.8") == installed_dist.distribution.as_requirement()
     assert 1 == len(installed_dist.direct_requirements)
     assert (
-        Requirement.parse("ansicolors==1.1.8; sys_platform == '{}'".format(sys.platform))
+        Requirement.parse(
+            f"ansicolors==1.1.8; sys_platform == '{sys.platform}'"
+        )
         == installed_dist.direct_requirements[0]
     )
 

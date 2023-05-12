@@ -14,7 +14,7 @@ def test_entry_point_targeting():
         pexrc_path = os.path.join(td, ".pexrc")
         with open(pexrc_path, "w") as pexrc:
             pex_python = ensure_python_interpreter(PY310)
-            pexrc.write("PEX_PYTHON=%s" % pex_python)
+            pexrc.write(f"PEX_PYTHON={pex_python}")
 
         # test pex with entry point
         pex_out_path = os.path.join(td, "pex.pex")

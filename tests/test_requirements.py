@@ -502,7 +502,7 @@ EXPECTED_EXAMPLE_PYTHON_REQ_INFOS = [
 def test_parse_requirements_from_url():
     # type: () -> None
     req_iter = parse_requirements(
-        Source.from_text("-r {}".format(EXAMPLE_PYTHON_REQUIREMENTS_URL)),
+        Source.from_text(f"-r {EXAMPLE_PYTHON_REQUIREMENTS_URL}"),
         fetcher=URLFetcher(),
     )
     results = normalize_results(req_iter)
@@ -512,7 +512,7 @@ def test_parse_requirements_from_url():
 def test_parse_constraints_from_url():
     # type: () -> None
     req_iter = parse_requirements(
-        Source.from_text("-c {}".format(EXAMPLE_PYTHON_REQUIREMENTS_URL)),
+        Source.from_text(f"-c {EXAMPLE_PYTHON_REQUIREMENTS_URL}"),
         fetcher=URLFetcher(),
     )
     results = normalize_results(req_iter)
@@ -544,26 +544,26 @@ def test_parse_requirement_file_from_file_url(tmpdir):
     req_iter = parse_requirement_file(requirements_file)
     expected = normalize_results(req_iter)
 
-    req_iter = parse_requirement_file("file:{}".format(requirements_file))
+    req_iter = parse_requirement_file(f"file:{requirements_file}")
     results = normalize_results(req_iter)
     assert expected == results
-    req_iter = parse_requirement_file("file://{}".format(requirements_file))
+    req_iter = parse_requirement_file(f"file://{requirements_file}")
     results = normalize_results(req_iter)
     assert expected == results
 
 
 def test_parse_requirements_from_url_no_fetcher():
     # type: () -> None
-    req_iter = parse_requirements(Source.from_text("-r {}".format(EXAMPLE_PYTHON_REQUIREMENTS_URL)))
+    req_iter = parse_requirements(
+        Source.from_text(f"-r {EXAMPLE_PYTHON_REQUIREMENTS_URL}")
+    )
     with pytest.raises(ParseError) as exec_info:
         next(req_iter)
 
     assert (
-        "<string> line 1:\n"
-        "-r {}\n"
-        "Problem resolving requirements file: The source is a url but no fetcher was supplied to "
-        "resolve its contents with.".format(EXAMPLE_PYTHON_REQUIREMENTS_URL)
-    ) == str(exec_info.value)
+        f"<string> line 1:\n-r {EXAMPLE_PYTHON_REQUIREMENTS_URL}\nProblem resolving requirements file: The source is a url but no fetcher was supplied to resolve its contents with."
+        == str(exec_info.value)
+    )
 
 
 def test_parse_scheme():

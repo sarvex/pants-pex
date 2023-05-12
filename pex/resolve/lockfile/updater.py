@@ -209,8 +209,7 @@ class ResolveUpdater(object):
         )  # type: OrderedDict[ProjectName, Requirement]
         for update in updates:
             project_name = update.project_name
-            original_constraint = original_constraints.get(project_name)
-            if original_constraint:
+            if original_constraint := original_constraints.get(project_name):
                 logger.warning(
                     "Over-riding original constraint {original} with {override}.".format(
                         original=original_constraint, override=update

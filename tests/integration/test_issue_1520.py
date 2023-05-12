@@ -63,9 +63,11 @@ def test_hermetic_console_scripts(tmpdir):
 
     scripts = [
         os.path.join(root, f)
-        for root, dirs, files in os.walk(os.path.join(pex_root, "installed_wheels"))
+        for root, dirs, files in os.walk(
+            os.path.join(pex_root, "installed_wheels")
+        )
         for f in files
-        if "protoc-gen-mypy" == f
+        if f == "protoc-gen-mypy"
     ]
     assert 1 == len(scripts)
     with open(scripts[0]) as fp:

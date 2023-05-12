@@ -80,12 +80,14 @@ def resolve_from_pex(
             if not transitive and not direct_requirements:
                 continue
 
-            unmet_constraints = [
+            if unmet_constraints := [
                 constraint
-                for constraint in constraints_by_project_name.get(project_name, ())
-                if fingerprinted_distribution.distribution not in constraint.requirement
-            ]
-            if unmet_constraints:
+                for constraint in constraints_by_project_name.get(
+                    project_name, ()
+                )
+                if fingerprinted_distribution.distribution
+                not in constraint.requirement
+            ]:
                 raise Unsatisfiable(
                     "The following constraints were not satisfied by {dist} resolved from "
                     "{pex}:\n{constraints}".format(

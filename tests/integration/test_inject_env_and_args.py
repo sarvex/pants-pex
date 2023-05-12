@@ -94,14 +94,13 @@ def create_inject_args_pex(
     # type: (...) -> str
     pex = os.path.join(
         str(tmpdir),
-        "pex-{}".format(hashlib.sha256(json.dumps(inject_args).encode("utf-8")).hexdigest()),
+        f'pex-{hashlib.sha256(json.dumps(inject_args).encode("utf-8")).hexdigest()}',
     )
     with open(os.path.join(str(tmpdir), "exe.py"), "w") as fp:
         fp.write(DUMP_ARGS_CODE)
     argv = ["--exe", fp.name, "-o", pex]
     for inject in inject_args:
-        argv.append("--inject-args")
-        argv.append(inject)
+        argv.extend(("--inject-args", inject))
     argv.extend(execution_mode_args)
     run_pex_command(args=argv).assert_success()
     return pex
@@ -289,9 +288,10 @@ def test_pyuwsgi(
     port = None  # type: Optional[str]
     with os.fdopen(stderr_read_fd, "r") as stderr_fp:
         for line in stderr_fp:
-            match = re.search(r"bound to TCP address 127.0.0.1:(?P<port>\d+)", line)
-            if match:
-                port = match.group("port")
+            if match := re.search(
+                r"bound to TCP address 127.0.0.1:(?P<port>\d+)", line
+            ):
+                port = match["port"]
                 break
     assert port is not None, "Could not determine uwsgi server port."
     with URLFetcher().get_body_stream("http://127.0.0.1:{port}".format(port=port)) as fp:

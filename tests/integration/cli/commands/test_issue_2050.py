@@ -273,8 +273,6 @@ def test_pep_517_prepare_metadata_for_build_wheel_fallback(
     result.assert_success()
 
     assert re.search(
-        r"Failed to prepare metadata for .+{}, trying to build a wheel instead: ".format(
-            re.escape("evdev-1.6.1+test.tar.gz")
-        ),
+        f'Failed to prepare metadata for .+{re.escape("evdev-1.6.1+test.tar.gz")}, trying to build a wheel instead: ',
         result.error,
     ), result.error

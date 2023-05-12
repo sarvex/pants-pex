@@ -30,11 +30,10 @@ if TYPE_CHECKING:
     from typing import Any
 
     import attr  # vendor:skip
+elif "__PEX_UNVENDORED__" in __import__("os").environ:
+    import attr  # vendor:skip
 else:
-    if "__PEX_UNVENDORED__" in __import__("os").environ:
-        import attr  # vendor:skip
-    else:
-        import pex.third_party.attr as attr
+    import pex.third_party.attr as attr
 
 
 def test_roundtrip(tmpdir):
@@ -184,9 +183,9 @@ class PatchTool(object):
         ).format(lock_file=os.path.basename(lock_file), patch=patch)
         process = subprocess.Popen(args=["git", "apply"], cwd=self.tmpdir, stdin=subprocess.PIPE)
         process.communicate(input=patch.encode("utf-8"))
-        assert 0 == process.returncode, "Applying patch failed with exit code {}".format(
-            process.returncode
-        )
+        assert (
+            0 == process.returncode
+        ), f"Applying patch failed with exit code {process.returncode}"
         with open(lock_file) as fp:
             return fp.read()
 

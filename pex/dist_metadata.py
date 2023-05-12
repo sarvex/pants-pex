@@ -107,9 +107,7 @@ def _parse_sdist_package_info(sdist_path):
                 return _parse_message(zip.read(pkg_info_path))
             except KeyError as e:
                 pex_warnings.warn(
-                    "Source distribution {} did not have the expected metadata file {}: {}".format(
-                        sdist_path, pkg_info_path, e
-                    )
+                    f"Source distribution {sdist_path} did not have the expected metadata file {pkg_info_path}: {e}"
                 )
                 return None
 
@@ -124,9 +122,7 @@ def _parse_sdist_package_info(sdist_path):
                     return _parse_message(fp.read())
             except KeyError as e:
                 pex_warnings.warn(
-                    "Source distribution {} did not have the expected metadata file {}: {}".format(
-                        sdist_path, pkg_info_path, e
-                    )
+                    f"Source distribution {sdist_path} did not have the expected metadata file {pkg_info_path}: {e}"
                 )
                 return None
 
@@ -156,11 +152,10 @@ def find_dist_info_files(
     )
     wheel_metadata_re = re.compile(dist_info_metadata_pattern)
     for item in listing:
-        match = wheel_metadata_re.match(item)
-        if match:
+        if match := wheel_metadata_re.match(item):
             yield DistMetadataFile(
-                project_name=ProjectName(match.group("project_name")),
-                version=Version(match.group("version")),
+                project_name=ProjectName(match["project_name"]),
+                version=Version(match["version"]),
                 path=item,
             )
 
@@ -184,12 +179,18 @@ def find_dist_info_file(
     else:
         normalized_version = None
 
-    for metadata_file in find_dist_info_files(filename, listing):
-        if normalized_project_name == metadata_file.project_name:
-            if normalized_version and normalized_version != metadata_file.version:
-                continue
-            return metadata_file.path
-    return None
+    return next(
+        (
+            metadata_file.path
+            for metadata_file in find_dist_info_files(filename, listing)
+            if normalized_project_name == metadata_file.project_name
+            and (
+                not normalized_version
+                or normalized_version == metadata_file.version
+            )
+        ),
+        None,
+    )
 
 
 def _parse_wheel_package_info(wheel_path):
@@ -259,10 +260,12 @@ class ProjectNameAndVersion(object):
         version = pkg_info.get("Version", None)
         if project_name is None or version is None:
             raise MetadataError(
-                "The 'Name' and 'Version' fields are not both present in package metadata for "
-                "{source}:\n{fields}".format(
-                    source=source,
-                    fields="\n".join("{}: {}".format(k, v) for k, v in pkg_info.items()),
+                (
+                    "The 'Name' and 'Version' fields are not both present in package metadata for "
+                    "{source}:\n{fields}".format(
+                        source=source,
+                        fields="\n".join(f"{k}: {v}" for k, v in pkg_info.items()),
+                    )
                 )
             )
         return cls(project_name=pkg_info["Name"], version=pkg_info["Version"])
@@ -331,10 +334,7 @@ def project_name_and_version(
 
     pkg_info = location if isinstance(location, Message) else _parse_pkg_info(location)
     if pkg_info is not None:
-        if isinstance(location, str):
-            source = location
-        else:
-            source = "<parsed message>"
+        source = location if isinstance(location, str) else "<parsed message>"
         return ProjectNameAndVersion.from_parsed_pkg_info(source=source, pkg_info=pkg_info)
     if fallback_to_filename and not isinstance(location, (Distribution, Message)):
         return ProjectNameAndVersion.from_filename(location)
@@ -358,9 +358,7 @@ def requires_python(location):
         return None
 
     python_requirement = pkg_info.get("Requires-Python", None)
-    if python_requirement is None:
-        return None
-    return SpecifierSet(python_requirement)
+    return None if python_requirement is None else SpecifierSet(python_requirement)
 
 
 def requires_dists(location):
@@ -381,8 +379,7 @@ def requires_dists(location):
     :return: All requirements found.
     """
     if isinstance(location, Distribution):
-        for requirement in location.metadata.requires_dists:
-            yield requirement
+        yield from location.metadata.requires_dists
         return
 
     pkg_info = location if isinstance(location, Message) else _parse_pkg_info(location)
@@ -392,8 +389,7 @@ def requires_dists(location):
     for requires_dist in pkg_info.get_all("Requires-Dist", ()):
         yield Requirement.parse(requires_dist)
 
-    legacy_requires = pkg_info.get_all("Requires", [])  # type: List[str]
-    if legacy_requires:
+    if legacy_requires := pkg_info.get_all("Requires", []):
         name_and_version = project_name_and_version(location)
         project_name = name_and_version.project_name if name_and_version else location
         pex_warnings.warn(
@@ -520,20 +516,18 @@ class Requirement(object):
 class DistMetadata(object):
     @classmethod
     def load(cls, location):
-        # type: (Union[Text, Message]) -> DistMetadata
-
-        project_name_and_ver = project_name_and_version(location)
-        if not project_name_and_ver:
+        if project_name_and_ver := project_name_and_version(location):
+            return cls(
+                project_name=ProjectName(project_name_and_ver.project_name),
+                version=Version(project_name_and_ver.version),
+                requires_dists=tuple(requires_dists(location)),
+                requires_python=requires_python(location),
+            )
+        else:
             raise MetadataError(
                 "Failed to determine project name and version for distribution at "
                 "{location}.".format(location=location)
             )
-        return cls(
-            project_name=ProjectName(project_name_and_ver.project_name),
-            version=Version(project_name_and_ver.version),
-            requires_dists=tuple(requires_dists(location)),
-            requires_python=requires_python(location),
-        )
 
     project_name = attr.ib()  # type: ProjectName
     version = attr.ib()  # type: Version
@@ -667,8 +661,9 @@ class Distribution(object):
                     location=self.location,
                 )
             )
-        for line in self._read_metadata_lines(os.path.join(self.location, relative_path)):
-            yield line
+        yield from self._read_metadata_lines(
+            os.path.join(self.location, relative_path)
+        )
 
     def get_entry_map(self):
         # type: () -> Dict[str, Dict[str, EntryPoint]]

@@ -37,11 +37,7 @@ class Graph(OutputMixin, PEXCommand):
             pex.path(),
             fontsize="14",
             labelloc="t",
-            label="Dependency graph of {} for interpreter {} ({})".format(
-                pex.path(),
-                pex.interpreter.binary,
-                InterpreterConstraint.exact_version(pex.interpreter),
-            ),
+            label=f"Dependency graph of {pex.path()} for interpreter {pex.interpreter.binary} ({InterpreterConstraint.exact_version(pex.interpreter)})",
         )
         marker_environment = pex.interpreter.identity.env_markers.as_dict()
         marker_environment["extra"] = ""
@@ -74,7 +70,7 @@ class Graph(OutputMixin, PEXCommand):
                     end=req.name,
                     label="{specifier}{marker}".format(
                         specifier=req.specifier if req.specifier else "",
-                        marker="; {}".format(req.marker) if req.marker else "",
+                        marker=f"; {req.marker}" if req.marker else "",
                     )
                     if (req.specifier or req.marker)
                     else None,
@@ -139,12 +135,7 @@ class Graph(OutputMixin, PEXCommand):
         if self.is_stdout(self.options):
             tmpdir = os.path.join(ENV.PEX_ROOT, "tmp")
             safe_mkdir(tmpdir)
-            with tempfile.NamedTemporaryFile(
-                prefix="{}.".format(__name__),
-                suffix=".deps.{}".format(self.options.format),
-                dir=tmpdir,
-                delete=False,
-            ) as tmp_out:
+            with tempfile.NamedTemporaryFile(prefix=f"{__name__}.", suffix=f".deps.{self.options.format}", dir=tmpdir, delete=False) as tmp_out:
                 yield tmp_out, tmp_out.name
                 return
 
@@ -170,7 +161,5 @@ class Graph(OutputMixin, PEXCommand):
 
         return try_open_file(
             open_path,
-            error="Failed to open dependency graph of {} rendered in {} for viewing.".format(
-                pex.path(), open_path
-            ),
+            error=f"Failed to open dependency graph of {pex.path()} rendered in {open_path} for viewing.",
         )

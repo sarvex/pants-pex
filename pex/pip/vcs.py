@@ -41,7 +41,7 @@ def _find_built_source_dist(
     )
     for name in listing:
         match = pattern.match(name)
-        if match and Version(match.group("version")) == version:
+        if match and Version(match["version"]) == version:
             return os.path.join(build_dir, name)
 
     return Error(

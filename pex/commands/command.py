@@ -36,11 +36,9 @@ if TYPE_CHECKING:
     )
 
     import attr  # vendor:skip
+    _T = TypeVar("_T")
 else:
     from pex.third_party import attr
-
-if TYPE_CHECKING:
-    _T = TypeVar("_T")
 
 
 def try_run_program(
@@ -56,7 +54,7 @@ def try_run_program(
         return Ok()
     except OSError as e:
         msg = [error] if error else []
-        msg.append("Do you have `{}` installed on the $PATH?: {}".format(program, e))
+        msg.append(f"Do you have `{program}` installed on the $PATH?: {e}")
         if url:
             msg.append(
                 "Find more information on `{program}` at {url}.".format(program=program, url=url)
@@ -73,7 +71,7 @@ def try_open_file(
     # type: (...) -> Result
     opener, url = (
         ("xdg-open", "https://www.freedesktop.org/wiki/Software/xdg-utils/")
-        if "Linux" == os.uname()[0]
+        if os.uname()[0] == "Linux"
         else ("open", None)
     )
     with open(os.devnull, "wb") as devnull:
@@ -148,8 +146,7 @@ class OutputMixin(object):
     ):
         # type: (...) -> Iterator[IO]
         if cls.is_stdout(options):
-            stdout = getattr(sys.stdout, "buffer", sys.stdout) if binary else sys.stdout
-            yield stdout
+            yield getattr(sys.stdout, "buffer", sys.stdout) if binary else sys.stdout
         else:
             with safe_open(options.output, mode="wb" if binary else "w") as out:
                 yield out
@@ -220,10 +217,7 @@ def register_global_arguments(
         "--pex-root",
         dest="pex_root",
         default=None,
-        help=(
-            "Specify the pex root used in this invocation of pex "
-            "(if unspecified, uses {}).".format(ENV.PEX_ROOT)
-        ),
+        help=f"Specify the pex root used in this invocation of pex (if unspecified, uses {ENV.PEX_ROOT}).",
     )
     group.add_argument(
         "--disable-cache",

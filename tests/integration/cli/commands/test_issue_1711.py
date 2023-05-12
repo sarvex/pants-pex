@@ -24,7 +24,7 @@ def pypi_artifact(
 ):
     # type: (...) -> Artifact
     return Artifact.from_url(
-        url="https://files.pythonhosted.org/packages/{}".format(path),
+        url=f"https://files.pythonhosted.org/packages/{path}",
         fingerprint=Fingerprint(algorithm="sha256", hash=hash),
     )
 

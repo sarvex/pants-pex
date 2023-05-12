@@ -66,10 +66,7 @@ if TYPE_CHECKING:
 def calculate_binary_name(
     platform_python_implementation, python_version=None  # type: Optional[Tuple[int, ...]]
 ):
-    # type: (...) -> str
-    name = "python"
-    if platform_python_implementation == "PyPy":
-        name = "pypy"
+    name = "pypy" if platform_python_implementation == "PyPy" else "python"
     if not python_version:
         return name
     return "{name}{version}".format(name=name, version=".".join(map(str, python_version)))
@@ -96,9 +93,7 @@ class PythonIdentity(object):
 
         # N.B.: Sometimes MACOSX_DEPLOYMENT_TARGET can be configured as a float.
         # See: https://github.com/pantsbuild/pex/issues/1337
-        if value is None:
-            return None
-        return str(value)
+        return None if value is None else str(value)
 
     @staticmethod
     def _iter_site_packages():
@@ -107,8 +102,7 @@ class PythonIdentity(object):
         try:
             from site import getsitepackages
 
-            for path in getsitepackages():
-                yield path
+            yield from getsitepackages()
         except ImportError as e:
             # The site.py provided by old virtualenv (which we use to create some venvs) does not
             # include a getsitepackages function.
@@ -140,8 +134,7 @@ class PythonIdentity(object):
                     continue
                 pth_path = os.path.join(dir_path, file)
                 TRACER.log("Found .pth file: {pth_file}".format(pth_file=pth_path), V=3)
-                for extras_path in iter_pth_paths(pth_path):
-                    yield extras_path
+                yield from iter_pth_paths(pth_path)
 
     @classmethod
     def get(cls, binary=None):
@@ -210,10 +203,10 @@ class PythonIdentity(object):
 
     @classmethod
     def decode(cls, encoded):
-        TRACER.log("creating PythonIdentity from encoded: %s" % encoded, V=9)
+        TRACER.log(f"creating PythonIdentity from encoded: {encoded}", V=9)
         values = json.loads(encoded)
         if len(values) != 14:
-            raise cls.InvalidError("Invalid interpreter identity: %s" % encoded)
+            raise cls.InvalidError(f"Invalid interpreter identity: {encoded}")
 
         supported_tags = values.pop("supported_tags")
 
@@ -240,7 +233,7 @@ class PythonIdentity(object):
         for abbr, interpreter in cls.ABBR_TO_INTERPRETER_NAME.items():
             if python_tag.startswith(abbr):
                 return interpreter
-        raise ValueError("Unknown interpreter: {}".format(python_tag))
+        raise ValueError(f"Unknown interpreter: {python_tag}")
 
     def __init__(
         self,
@@ -410,7 +403,7 @@ class PythonIdentity(object):
         # type: () -> str
         # return the python version in the format of the 'python' key for distributions
         # specifically, '2.7', '3.2', etc.
-        return "%d.%d" % (self.version[0:2])
+        return "%d.%d" % self.version[:2]
 
     def __str__(self):
         # type: () -> str
@@ -668,11 +661,8 @@ class PythonInterpreter(object):
                         # likely OSError should help identify the underlying issue.
                         failed_interpreters[python] = repr(exception)
 
-        for interpreter in cls._filter(iter_interpreters()):
-            yield interpreter
-
-        for python, error in failed_interpreters.items():
-            yield python, error
+        yield from cls._filter(iter_interpreters())
+        yield from failed_interpreters.items()
 
     @classmethod
     def all(cls, paths=None):
@@ -688,10 +678,7 @@ class PythonInterpreter(object):
         env=None,  # type: Optional[Mapping[str, str]]
     ):
         # type: (...) -> Tuple[Iterable[str], Mapping[str, str]]
-        cmd = [binary]
-
-        # Don't add the user site directory to `sys.path`.
-        cmd.append("-s")
+        cmd = [binary, "-s"]
 
         env = cls._sanitized_environment(env=env)
         pythonpath = list(pythonpath or ())
@@ -706,8 +693,8 @@ class PythonInterpreter(object):
 
         rendered_command = " ".join(cmd)
         if pythonpath:
-            rendered_command = "PYTHONPATH={} {}".format(env["PYTHONPATH"], rendered_command)
-        TRACER.log("Executing: {}".format(rendered_command), V=3)
+            rendered_command = f'PYTHONPATH={env["PYTHONPATH"]} {rendered_command}'
+        TRACER.log(f"Executing: {rendered_command}", V=3)
 
         return cmd, env
 
@@ -743,9 +730,9 @@ class PythonInterpreter(object):
             if shim is not None:
                 python = shim.select_version()
                 if python is None:
-                    TRACER.log("Detected inactive pyenv shim: {}.".format(shim), V=3)
+                    TRACER.log(f"Detected inactive pyenv shim: {shim}.", V=3)
                 else:
-                    TRACER.log("Detected pyenv shim activated to {}: {}.".format(python, shim), V=3)
+                    TRACER.log(f"Detected pyenv shim activated to {python}: {shim}.", V=3)
                 return python
         return binary
 
@@ -888,7 +875,7 @@ class PythonInterpreter(object):
         canonicalized_binary = cls.canonicalize_path(binary)
         if not os.path.exists(canonicalized_binary):
             raise cls.InterpreterNotFound(
-                "The interpreter path {} does not exist.".format(canonicalized_binary)
+                f"The interpreter path {canonicalized_binary} does not exist."
             )
 
         # N.B.: The cache is written as the last step in PythonInterpreter instance initialization.
@@ -916,12 +903,12 @@ class PythonInterpreter(object):
         """
         python = cls._resolve_pyenv_shim(binary, pyenv=pyenv)
         if python is None:
-            raise cls.IdentificationError("The pyenv shim at {} is not active.".format(binary))
+            raise cls.IdentificationError(f"The pyenv shim at {binary} is not active.")
 
         try:
             return cast(PythonInterpreter, cls._spawn_from_binary(python).await_result())
         except Job.Error as e:
-            raise cls.IdentificationError("Failed to identify {}: {}".format(binary, e))
+            raise cls.IdentificationError(f"Failed to identify {binary}: {e}")
 
     @classmethod
     def _matches_binary_name(cls, path):
@@ -1171,7 +1158,7 @@ class PythonInterpreter(object):
                 if resolution_path:
                     message.append(
                         "Resolved through {path}".format(
-                            path=" -> ".join(binary for binary in resolution_path)
+                            path=" -> ".join(resolution_path)
                         )
                     )
                 message.append(
@@ -1244,7 +1231,7 @@ class PythonInterpreter(object):
             release = self._identity.configured_macosx_deployment_target
             version = release.split(".")
             if len(version) == 1:
-                release = "{}.0".format(version[0])
+                release = f"{version[0]}.0"
             elif len(version) > 2:
                 release = ".".join(version[:2])
 
@@ -1261,13 +1248,7 @@ class PythonInterpreter(object):
                 # ... through ...
                 # + https://github.com/python/cpython/blob/v3.9.2/Lib/sysconfig.py#L652-L654
                 TRACER.log(
-                    "Correcting mis-configured MACOSX_DEPLOYMENT_TARGET of {} to {} corresponding "
-                    "to a valid PEP-425 platform of {} for {}.".format(
-                        self._identity.configured_macosx_deployment_target,
-                        release,
-                        pep425_compatible_platform,
-                        self,
-                    )
+                    f"Correcting mis-configured MACOSX_DEPLOYMENT_TARGET of {self._identity.configured_macosx_deployment_target} to {release} corresponding to a valid PEP-425 platform of {pep425_compatible_platform} for {self}."
                 )
                 env_copy.update(_PYTHON_HOST_PLATFORM=pep425_compatible_platform)
 

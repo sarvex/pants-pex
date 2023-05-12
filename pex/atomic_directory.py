@@ -67,7 +67,7 @@ class AtomicDirectory(object):
     ):
         # type: (...) -> None
         self._target_dir = target_dir
-        self._work_dir = "{}.{}.work".format(target_dir, "lck" if locked else uuid4().hex)
+        self._work_dir = f'{target_dir}.{"lck" if locked else uuid4().hex}.work'
 
     @property
     def work_dir(self):
@@ -240,7 +240,7 @@ def atomic_directory(
     head, tail = os.path.split(atomic_dir.target_dir)
     if head:
         safe_mkdir(head)
-    lockfile = os.path.join(head, ".{}.atomic_directory.lck".format(tail or "here"))
+    lockfile = os.path.join(head, f'.{tail or "here"}.atomic_directory.lck')
 
     unlock = _LOCK_MANAGER.lock(file_path=lockfile, lock_style=lock_style)
     if atomic_dir.is_finalized():

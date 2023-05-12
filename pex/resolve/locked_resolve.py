@@ -115,7 +115,7 @@ class Artifact(object):
                 verified=verified,
             )
 
-        if "file" == artifact_url.scheme and os.path.isdir(artifact_url.path):
+        if artifact_url.scheme == "file" and os.path.isdir(artifact_url.path):
             directory = os.path.normpath(artifact_url.path)
             return LocalProjectArtifact(
                 url=artifact_url.normalized_url,
@@ -161,8 +161,7 @@ class FileArtifact(Artifact):
     def parse_tags(self):
         # type: () -> Iterator[tags.Tag]
         if self.filename.endswith(".whl"):
-            for tag in CompatibilityTags.from_wheel(self.filename):
-                yield tag
+            yield from CompatibilityTags.from_wheel(self.filename)
 
 
 @attr.s(frozen=True)
@@ -257,8 +256,7 @@ class LockedRequirement(object):
     def iter_artifacts(self):
         # type: () -> Iterator[Union[FileArtifact, LocalProjectArtifact, VCSArtifact]]
         yield self.artifact
-        for artifact in self.additional_artifacts:
-            yield artifact
+        yield from self.additional_artifacts
 
     def iter_compatible_artifacts(
         self,

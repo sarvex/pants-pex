@@ -21,7 +21,9 @@ def test_mount_respects_env(
     pex_root = os.path.join(home, ".pex")
     os.makedirs(pex_root)
     os.chmod(pex_root, 0o555)
-    unwritable_pex_root_warning = "PEXWarning: PEX_ROOT is configured as {}".format(pex_root)
+    unwritable_pex_root_warning = (
+        f"PEXWarning: PEX_ROOT is configured as {pex_root}"
+    )
 
     pex_file = os.path.join(str(tmpdir), "pex.pex")
 

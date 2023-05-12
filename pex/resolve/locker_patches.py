@@ -10,7 +10,7 @@ try:
 
     python_full_versions = requires_python.PYTHON_FULL_VERSIONS
     python_versions = requires_python.PYTHON_VERSIONS
-    python_majors = sorted(set(version[0] for version in python_full_versions))
+    python_majors = sorted({version[0] for version in python_full_versions})
 except ImportError:
     python_full_versions = []
     python_versions = []
@@ -21,11 +21,7 @@ platform_systems = []
 sys_platforms = []
 platform_tag_regexps = []
 
-# N.B.: The following environment variables are used by the Pex runtime to control Pip and must be
-# kept in-sync with `locker.py`.
-target_systems_file = os.environ.pop("_PEX_TARGET_SYSTEMS_FILE", None)
-
-if target_systems_file:
+if target_systems_file := os.environ.pop("_PEX_TARGET_SYSTEMS_FILE", None):
     import json
 
     with open(target_systems_file) as fp:
@@ -64,9 +60,7 @@ def patch_marker_evaluate():
             return os_names_strings
         if name == "platform_system":
             return platform_systems_strings
-        if name == "sys_platform":
-            return sys_platforms_strings
-        return skip
+        return sys_platforms_strings if name == "sys_platform" else skip
 
     def _eval_op(lhs, op, rhs):
         if lhs is skip or rhs is skip:

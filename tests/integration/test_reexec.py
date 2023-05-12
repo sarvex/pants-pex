@@ -136,7 +136,7 @@ def test_pex_reexec_constraints_dont_match_current_pex_python_path():
     _assert_exec_chain(
         exec_chain=[py310_interpreter],
         pex_python_path=[py39_interpreter, py310_interpreter],
-        interpreter_constraints=["=={}".format(PY310)],
+        interpreter_constraints=[f"=={PY310}"],
     )
 
 
@@ -156,7 +156,7 @@ def test_pex_reexec_constraints_dont_match_current_pex_python():
     _assert_exec_chain(
         exec_chain=[interpreter],
         pex_python=interpreter,
-        interpreter_constraints=["=={}".format(version)],
+        interpreter_constraints=[f"=={version}"],
     )
 
 

@@ -327,15 +327,15 @@ def test_activate_extras_issue_615():
             stderr=subprocess.PIPE,
         )
         stdout, stderr = process.communicate()
-        assert 0 == process.returncode, "Process failed with exit code {} and output:\n{}".format(
-            process.returncode, stderr
-        )
-        assert to_bytes("{} 1.6.3".format(os.path.basename(pb.path()))) == stdout.strip()
+        assert (
+            0 == process.returncode
+        ), f"Process failed with exit code {process.returncode} and output:\n{stderr}"
+        assert to_bytes(f"{os.path.basename(pb.path())} 1.6.3") == stdout.strip()
 
 
 def assert_namespace_packages_warning(distribution, version, expected_warning):
     # type: (str, str, bool) -> None
-    requirement = "{}=={}".format(distribution, version)
+    requirement = f"{distribution}=={version}"
     pb = PEXBuilder()
     for installed_dist in resolver.resolve(requirements=[requirement]).installed_distributions:
         pb.add_dist_location(installed_dist.distribution.location)
@@ -346,7 +346,7 @@ def assert_namespace_packages_warning(distribution, version, expected_warning):
     stderr_text = stderr.decode("utf8")
 
     partial_warning_preamble = "PEXWarning: The `pkg_resources` package was loaded"
-    partial_warning_detail = "{} namespace packages:".format(requirement)
+    partial_warning_detail = f"{requirement} namespace packages:"
 
     if expected_warning:
         assert partial_warning_preamble in stderr_text
@@ -449,7 +449,7 @@ _wheel_tags = "macosx_10_9_x86_64.macosx_11_0_arm64.linux_x86_64.linux_aarch64"
 def test_can_add_ranking_platform_tag_more_specific(assert_cpython_38_environment_can_add):
     # type: (Callable[[FingerprintedDistribution], _RankedDistribution]) -> None
     ranked_specific = assert_cpython_38_environment_can_add(
-        create_dist("foo-1.0.0-cp38-cp38-{}.whl".format(_wheel_tags), "foo", "1.0.0")
+        create_dist(f"foo-1.0.0-cp38-cp38-{_wheel_tags}.whl", "foo", "1.0.0")
     )
     ranked_universal = assert_cpython_38_environment_can_add(
         create_dist("foo-2.0.0-py2.py3-none-any.whl", "foo", "2.0.0")
@@ -468,9 +468,9 @@ def test_can_add_ranking_platform_tag_more_specific(assert_cpython_38_environmen
 def test_can_add_ranking_version_newer_tie_break(assert_cpython_38_environment_can_add):
     # type: (Callable[[FingerprintedDistribution], _RankedDistribution]) -> None
     ranked_v1 = assert_cpython_38_environment_can_add(
-        create_dist("foo-1.0.0-cp38-cp38-{}.whl".format(_wheel_tags), "foo", "1.0.0")
+        create_dist(f"foo-1.0.0-cp38-cp38-{_wheel_tags}.whl", "foo", "1.0.0")
     )
     ranked_v2 = assert_cpython_38_environment_can_add(
-        create_dist("foo-2.0.0-cp38-cp38-{}.whl".format(_wheel_tags), "foo", "2.0.0")
+        create_dist(f"foo-2.0.0-cp38-cp38-{_wheel_tags}.whl", "foo", "2.0.0")
     )
     assert ranked_v2 < ranked_v1

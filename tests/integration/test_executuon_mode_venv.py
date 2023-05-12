@@ -56,7 +56,7 @@ def test_custom_prompt(tmpdir):
             "/usr/bin/env",
             "bash",
             "-c",
-            "source {} && echo $PS1".format(os.path.join(venv_dir, "bin", "activate")),
+            f'source {os.path.join(venv_dir, "bin", "activate")} && echo $PS1',
         ],
         env=make_env(TERM="dumb", COLS=80),
     )

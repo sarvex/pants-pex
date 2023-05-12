@@ -355,7 +355,7 @@ def resolve_from_lock(
             pool.close()
             pool.join()
 
-    with TRACER.timed("Categorizing {} downloaded artifacts".format(len(download_results))):
+    with TRACER.timed(f"Categorizing {len(download_results)} downloaded artifacts"):
         downloaded_artifacts = {}  # type: Dict[DownloadableArtifact, DownloadedArtifact]
         download_errors = OrderedDict()  # type: OrderedDict[DownloadableArtifact, Error]
         for downloadable_artifact, download_result in download_results:
@@ -408,11 +408,7 @@ def resolve_from_lock(
                         )
                     )
 
-    with TRACER.timed(
-        "Building {} artifacts and installing {}".format(
-            len(build_requests), len(build_requests) + len(install_requests)
-        )
-    ):
+    with TRACER.timed(f"Building {len(build_requests)} artifacts and installing {len(build_requests) + len(install_requests)}"):
         build_and_install_request = BuildAndInstallRequest(
             build_requests=build_requests,
             install_requests=install_requests,

@@ -72,7 +72,7 @@ class FindLinksRepo(object):
             try:
                 data = http_server_process.stdout.readline()
                 match = re.match(br"^Serving HTTP on [^\s]+ port (?P<port>\d+)[^\d]", data)
-                real_port.put(int(match.group("port")))
+                real_port.put(int(match["port"]))
             finally:
                 real_port.task_done()
 
@@ -331,7 +331,7 @@ class Repository(JsonMixin, OutputMixin, PEXCommand):
         )
 
         name, _ = os.path.splitext(os.path.basename(pex_path))
-        version = "0.0.0+{}".format(pex_info.code_hash)
+        version = f"0.0.0+{pex_info.code_hash}"
         zip_safe = False  # Since PEX files never require code to be zip safe, assume it isn't.
         py_modules = [os.path.splitext(f)[0] for f in os.listdir(src) if f.endswith(".py")]
         packages = [
@@ -390,29 +390,33 @@ class Repository(JsonMixin, OutputMixin, PEXCommand):
                     version=version,
                     zip_safe=zip_safe,
                     py_modules=(
-                        "py_modules =\n  {}".format("\n  ".join(py_modules)) if py_modules else ""
+                        "py_modules =\n  {}".format("\n  ".join(py_modules))
+                        if py_modules
+                        else ""
                     ),
                     packages=(
-                        "packages = \n  {}".format("\n  ".join(packages)) if packages else ""
+                        "packages = \n  {}".format("\n  ".join(packages))
+                        if packages
+                        else ""
                     ),
                     install_requires=(
-                        "install_requires =\n  {}".format("\n  ".join(install_requires))
+                        "install_requires =\n  {}".format(
+                            "\n  ".join(install_requires)
+                        )
                         if install_requires
                         else ""
                     ),
-                    python_requires=(
-                        "python_requires = {}".format(python_requires) if python_requires else ""
-                    ),
-                    entry_points=(
-                        "console_scripts =\n  {}".format(
-                            "\n  ".join(
-                                "{} = {}".format(name, entry_point)
-                                for name, entry_point in entry_points
-                            )
+                    python_requires=f"python_requires = {python_requires}"
+                    if python_requires
+                    else "",
+                    entry_points="console_scripts =\n  {}".format(
+                        "\n  ".join(
+                            f"{name} = {entry_point}"
+                            for name, entry_point in entry_points
                         )
-                        if entry_points
-                        else ""
-                    ),
+                    )
+                    if entry_points
+                    else "",
                 )
             )
 

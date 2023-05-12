@@ -77,7 +77,11 @@ def test_load_build_system_pyproject(
     }
     assert ProjectName("flit_core") in dists
     subprocess.check_call(
-        args=[build_system.venv_pex.pex, "-c", "import {}".format(build_system.build_backend)]
+        args=[
+            build_system.venv_pex.pex,
+            "-c",
+            f"import {build_system.build_backend}",
+        ]
     )
 
 

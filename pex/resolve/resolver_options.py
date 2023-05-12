@@ -41,8 +41,7 @@ class _ManylinuxAction(Action):
             setattr(namespace, self.dest, value)
         else:
             raise ArgumentTypeError(
-                "Please specify a manylinux standard; ie: --manylinux=manylinux1. "
-                "Given {}".format(value)
+                f"Please specify a manylinux standard; ie: --manylinux=manylinux1. Given {value}"
             )
 
 

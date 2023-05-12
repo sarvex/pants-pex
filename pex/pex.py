@@ -142,8 +142,8 @@ class PEX(object):  # noqa: T000
 
     @classmethod
     def _clean_environment(cls, env=None, strip_pex_env=True):
-        env = env or os.environ
         if strip_pex_env:
+            env = env or os.environ
             for key in list(env):
                 if key.startswith("PEX_"):
                     del env[key]
@@ -278,7 +278,7 @@ class PEX(object):  # noqa: T000
                 and module_file
                 and module_file not in isolated_sys_path
             ):
-                TRACER.log("Dropping %s" % (module_name,), V=3)
+                TRACER.log(f"Dropping {module_name}", V=3)
                 continue
 
             module_path = getattr(module, "__path__", None)
@@ -290,13 +290,13 @@ class PEX(object):  # noqa: T000
 
             # Unexpected objects, e.g. PEP 420 namespace packages, should just be dropped.
             if not isinstance(module_path, list):
-                TRACER.log("Dropping %s" % (module_name,), V=3)
+                TRACER.log(f"Dropping {module_name}", V=3)
                 continue
 
             # Drop tainted package paths.
             for k in reversed(range(len(module_path))):
                 if module_path[k] not in isolated_sys_path:
-                    TRACER.log("Scrubbing %s.__path__: %s" % (module_name, module_path[k]), V=3)
+                    TRACER.log(f"Scrubbing {module_name}.__path__: {module_path[k]}", V=3)
                     module_path.pop(k)
 
             # The package still contains untainted path elements, so it can stay.
@@ -339,15 +339,15 @@ class PEX(object):  # noqa: T000
             # type: (Optional[str]) -> Iterable[str]
             if path is None:
                 return ()
-            locations = set(dist.location for dist in find_distributions(path))
-            return {path} | locations | set(os.path.realpath(path) for path in locations)
+            locations = {dist.location for dist in find_distributions(path)}
+            return {path} | locations | {os.path.realpath(path) for path in locations}
 
         for path_element in sys.path:
             if path_element not in isolated_sys_path:
-                TRACER.log("Tainted path element: %s" % path_element)
+                TRACER.log(f"Tainted path element: {path_element}")
                 site_distributions.update(all_distribution_paths(path_element))
             else:
-                TRACER.log("Not a tainted path element: %s" % path_element, V=2)
+                TRACER.log(f"Not a tainted path element: {path_element}", V=2)
 
         user_site_distributions.update(all_distribution_paths(USER_SITE))
 
@@ -355,9 +355,9 @@ class PEX(object):  # noqa: T000
             scrub_paths = OrderedSet(site_distributions)
             scrub_paths.update(user_site_distributions)
             for path in user_site_distributions:
-                TRACER.log("Scrubbing from user site: %s" % path)
+                TRACER.log(f"Scrubbing from user site: {path}")
             for path in site_distributions:
-                TRACER.log("Scrubbing from site-packages: %s" % path)
+                TRACER.log(f"Scrubbing from site-packages: {path}")
 
         scrubbed_sys_path = list(OrderedSet(sys.path) - scrub_paths)
 
@@ -366,36 +366,35 @@ class PEX(object):  # noqa: T000
             original_pythonpath = pythonpath.split(os.pathsep)
             user_pythonpath = list(OrderedSet(original_pythonpath) - set(sys.path))
             if original_pythonpath == user_pythonpath:
-                TRACER.log("Unstashed PYTHONPATH of %s" % pythonpath, V=2)
+                TRACER.log(f"Unstashed PYTHONPATH of {pythonpath}", V=2)
             else:
                 TRACER.log(
-                    "Extracted user PYTHONPATH of %s from unstashed PYTHONPATH of %s"
-                    % (os.pathsep.join(user_pythonpath), pythonpath),
+                    f"Extracted user PYTHONPATH of {os.pathsep.join(user_pythonpath)} from unstashed PYTHONPATH of {pythonpath}",
                     V=2,
                 )
 
             if inherit_path == InheritPath.FALSE:
                 for path in user_pythonpath:
-                    TRACER.log("Scrubbing user PYTHONPATH element: %s" % path)
+                    TRACER.log(f"Scrubbing user PYTHONPATH element: {path}")
             elif inherit_path == InheritPath.PREFER:
-                TRACER.log("Prepending user PYTHONPATH: %s" % os.pathsep.join(user_pythonpath))
+                TRACER.log(f"Prepending user PYTHONPATH: {os.pathsep.join(user_pythonpath)}")
                 scrubbed_sys_path = user_pythonpath + scrubbed_sys_path
             elif inherit_path == InheritPath.FALLBACK:
-                TRACER.log("Appending user PYTHONPATH: %s" % os.pathsep.join(user_pythonpath))
-                scrubbed_sys_path = scrubbed_sys_path + user_pythonpath
+                TRACER.log(f"Appending user PYTHONPATH: {os.pathsep.join(user_pythonpath)}")
+                scrubbed_sys_path += user_pythonpath
 
         scrub_from_importer_cache = filter(
             lambda key: any(key.startswith(path) for path in scrub_paths),
             sys.path_importer_cache.keys(),
         )
-        scrubbed_importer_cache = dict(
-            (key, value)
+        scrubbed_importer_cache = {
+            key: value
             for (key, value) in sys.path_importer_cache.items()
             if key not in scrub_from_importer_cache
-        )
+        }
 
         for importer_cache_entry in scrub_from_importer_cache:
-            TRACER.log("Scrubbing from path_importer_cache: %s" % importer_cache_entry, V=2)
+            TRACER.log(f"Scrubbing from path_importer_cache: {importer_cache_entry}", V=2)
 
         return scrubbed_sys_path, scrubbed_importer_cache
 
@@ -538,8 +537,7 @@ class PEX(object):  # noqa: T000
 
         self.activate()
 
-        pex_file = self._vars.PEX
-        if pex_file:
+        if pex_file := self._vars.PEX:
             try:
                 from setproctitle import setproctitle  # type: ignore[import]
 
@@ -590,7 +588,7 @@ class PEX(object):  # noqa: T000
             return self.execute_script(self._pex_info_overrides.script)
         if self._pex_info_overrides.entry_point:
             return self.execute_entry(
-                EntryPoint.parse("run = {}".format(self._pex_info_overrides.entry_point))
+                EntryPoint.parse(f"run = {self._pex_info_overrides.entry_point}")
             )
 
         for name, value in self._pex_info.inject_env.items():
@@ -601,7 +599,7 @@ class PEX(object):  # noqa: T000
             return self.execute_script(self._pex_info.script)
         else:
             return self.execute_entry(
-                EntryPoint.parse("run = {}".format(self._pex_info.entry_point))
+                EntryPoint.parse(f"run = {self._pex_info.entry_point}")
             )
 
     @classmethod
@@ -620,7 +618,7 @@ class PEX(object):  # noqa: T000
         third_party.uninstall()
 
         bootstrap = Bootstrap.locate()
-        log("Demoting code from %s" % bootstrap, V=2)
+        log(f"Demoting code from {bootstrap}", V=2)
         for module in bootstrap.demote():
             log("un-imported {}".format(module), V=9)
 
@@ -674,9 +672,7 @@ class PEX(object):  # noqa: T000
                         with open(file_path) as fp:
                             content = fp.read()
                 except IOError as e:
-                    return "Could not open {} in the environment [{}]: {}".format(
-                        arg, sys.argv[0], e
-                    )
+                    return f"Could not open {arg} in the environment [{sys.argv[0]}]: {e}"
                 sys.argv = args
                 return self.execute_content(arg, content)
         else:
@@ -689,9 +685,7 @@ class PEX(object):  # noqa: T000
                     readline.read_history_file(histfile)
                     readline.set_history_length(1000)
                 except OSError as e:
-                    sys.stderr.write(
-                        "Failed to read history file at {} due to: {}".format(histfile, e)
-                    )
+                    sys.stderr.write(f"Failed to read history file at {histfile} due to: {e}")
 
                 atexit.register(readline.write_history_file, histfile)
 
@@ -715,7 +709,7 @@ class PEX(object):  # noqa: T000
         main = sys.modules.get("__main__")
         if not main or not main.__file__:
             # N.B.: This should never happen.
-            return "Unable to resolve PEX __main__ module file: {}".format(main)
+            return f"Unable to resolve PEX __main__ module file: {main}"
 
         python = sys.executable
         cmdline = [python] + python_options + [main.__file__] + args
@@ -730,8 +724,9 @@ class PEX(object):  # noqa: T000
         # type: (str) -> Any
         dists = list(self.activate())
 
-        dist_entry_point = get_entry_point_from_console_script(script_name, dists)
-        if dist_entry_point:
+        if dist_entry_point := get_entry_point_from_console_script(
+            script_name, dists
+        ):
             TRACER.log(
                 "Found console_script {!r} in {!r}.".format(
                     dist_entry_point.entry_point, dist_entry_point.dist
@@ -744,8 +739,7 @@ class PEX(object):  # noqa: T000
             return "Could not find script {!r} in pex!".format(script_name)
 
         TRACER.log("Found script {!r} in {!r}.".format(script_name, dist_script.dist))
-        ast = dist_script.python_script()
-        if ast:
+        if ast := dist_script.python_script():
             return self.execute_ast(dist_script.path, ast, argv0=script_name)
         else:
             return self.execute_external(dist_script.path)
@@ -757,7 +751,7 @@ class PEX(object):  # noqa: T000
         try:
             return Executor.open_process(args).wait()
         except Executor.ExecutionError as e:
-            return "Could not invoke script {}: {}".format(binary, e)
+            return f"Could not invoke script {binary}: {e}"
 
     @classmethod
     def execute_content(
@@ -770,7 +764,7 @@ class PEX(object):  # noqa: T000
         try:
             program = compile(content, name, "exec", flags=0, dont_inherit=1)
         except SyntaxError as e:
-            return "Unable to parse {}: {}".format(name, e)
+            return f"Unable to parse {name}: {e}"
         return cls.execute_ast(name, program, argv0=argv0)
 
     @classmethod
@@ -844,7 +838,7 @@ class PEX(object):  # noqa: T000
             env = os.environ.copy()
             self._clean_environment(env=env)
 
-        TRACER.log("PEX.run invoking {}".format(" ".join(self.cmdline(args))))
+        TRACER.log(f'PEX.run invoking {" ".join(self.cmdline(args))}')
         _, process = self._interpreter.open_process(
             [self._pex] + list(args),
             cwd=self._pex if with_chroot else os.getcwd(),
@@ -869,13 +863,13 @@ class PEX(object):  # noqa: T000
         # Only module is specified
         if len(ep_split) == 1:
             ep_module = ep_split[0]
-            import_statement = "import {}".format(ep_module)
+            import_statement = f"import {ep_module}"
         elif len(ep_split) == 2:
             ep_module = ep_split[0]
             ep_method = ep_split[1]
-            import_statement = "from {} import {}".format(ep_module, ep_method)
+            import_statement = f"from {ep_module} import {ep_method}"
         else:
-            raise self.InvalidEntryPoint("Failed to parse: `{}`".format(entry_point))
+            raise self.InvalidEntryPoint(f"Failed to parse: `{entry_point}`")
 
         with named_temporary_file() as fp:
             fp.write(import_statement.encode("utf-8"))
@@ -883,6 +877,5 @@ class PEX(object):  # noqa: T000
             retcode = self.run([fp.name], env={"PEX_INTERPRETER": "1"})
             if retcode != 0:
                 raise self.InvalidEntryPoint(
-                    "Invalid entry point: `{}`\n"
-                    "Entry point verification failed: `{}`".format(entry_point, import_statement)
+                    f"Invalid entry point: `{entry_point}`\nEntry point verification failed: `{import_statement}`"
                 )

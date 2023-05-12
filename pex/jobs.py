@@ -127,7 +127,7 @@ class Job(object):
         err = None
         if stderr:
             err = stderr.decode("utf-8")
-            msg += "\nSTDERR:\n{}".format(err)
+            msg += f"\nSTDERR:\n{err}"
         raise self.Error(
             pid=self._process.pid,
             command=self._command,
@@ -144,9 +144,7 @@ class Job(object):
     def _check_returncode(self, stderr=None):
         # type: (Optional[bytes]) -> None
         if self._process.returncode != 0:
-            msg = "Executing {} failed with {}".format(
-                " ".join(self._command), self._process.returncode
-            )
+            msg = f'Executing {" ".join(self._command)} failed with {self._process.returncode}'
             raise self.create_error(msg, stderr=stderr)
 
     def __str__(self):

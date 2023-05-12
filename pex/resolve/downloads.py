@@ -99,8 +99,7 @@ class ArtifactDownloader(object):
         # type: (...) -> Job
 
         for password_entry in self.package_index_configuration.password_entries:
-            credentialed_url = password_entry.maybe_inject_in_url(url)
-            if credentialed_url:
+            if credentialed_url := password_entry.maybe_inject_in_url(url):
                 url = credentialed_url
                 break
 
@@ -147,8 +146,7 @@ class ArtifactDownloader(object):
     def _to_file_artifact(self, artifact):
         # type: (PartialArtifact) -> SpawnedJob[FileArtifact]
         url = artifact.url.normalized_url
-        fingerprint = artifact.fingerprint
-        if fingerprint:
+        if fingerprint := artifact.fingerprint:
             return SpawnedJob.completed(
                 self._create_file_artifact(url, fingerprint, verified=artifact.verified)
             )

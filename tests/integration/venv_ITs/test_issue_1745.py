@@ -74,7 +74,7 @@ def execution_configuration(
         PythonInterfaceOption.FILE,
         PythonInterfaceOption.DIRECTORY,
     ):
-        raise AssertionError("Unexpected PythonInterfaceOption: {}".format(request.param))
+        raise AssertionError(f"Unexpected PythonInterfaceOption: {request.param}")
 
     src = os.path.join(str(tmpdir), "src")
     python_file = os.path.join(

@@ -29,7 +29,5 @@ class InheritPath(Enum["InheritPath.Value"]):
             return InheritPath.PREFER
         else:
             raise ValueError(
-                "An InheritPath.Value must be a str or a bool; given {} of type {}".format(
-                    value, type(value)
-                )
+                f"An InheritPath.Value must be a str or a bool; given {value} of type {type(value)}"
             )

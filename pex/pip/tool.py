@@ -194,28 +194,20 @@ class _Issue9420Analyzer(ErrorAnalyzer):
     _strip = attr.ib(default=None)  # type: Optional[int]
 
     def analyze(self, line):
-        # type: (str) -> ErrorAnalysis
-        # N.B.: Pip --log output looks like:
-        # 2021-01-04T16:12:01,119 ERROR: Cannot install pantsbuild-pants==1.24.0.dev2 and wheel==0.33.6 because these package versions have conflicting dependencies.
-        # 2021-01-04T16:12:01,119
-        # 2021-01-04T16:12:01,119 The conflict is caused by:
-        # 2021-01-04T16:12:01,119     The user requested wheel==0.33.6
-        # 2021-01-04T16:12:01,119     pantsbuild-pants 1.24.0.dev2 depends on wheel==0.31.1
-        # 2021-01-04T16:12:01,119
-        # 2021-01-04T16:12:01,119 To fix this you could try to:
-        # 2021-01-04T16:12:01,119 1. loosen the range of package versions you've specified
-        # 2021-01-04T16:12:01,119 2. remove package versions to allow pip attempt to solve the dependency conflict
-        # 2021-01-04T16:12:01,119 ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/user_guide/#fixing-conflicting-dependencies
-        if not self._strip:
-            match = re.match(r"^(?P<timestamp>[^ ]+) ERROR: Cannot install ", line)
-            if match:
-                self._strip = len(match.group("timestamp"))
-        else:
-            match = re.match(r"^[^ ]+ ERROR: ResolutionImpossible: ", line)
-            if match:
-                return self.Complete()
-            else:
-                return self.Continue(ErrorMessage(line[self._strip :]))
+        if self._strip:
+            return (
+                self.Complete()
+                if (
+                    match := re.match(
+                        r"^[^ ]+ ERROR: ResolutionImpossible: ", line
+                    )
+                )
+                else self.Continue(ErrorMessage(line[self._strip :]))
+            )
+        if match := re.match(
+            r"^(?P<timestamp>[^ ]+) ERROR: Cannot install ", line
+        ):
+            self._strip = len(match["timestamp"])
         return self.Continue()
 
 
@@ -298,7 +290,7 @@ class Pip(object):
         # of 3.
         pip_verbosity = pip_verbosity or (ENV.PEX_VERBOSE // 3)
         if pip_verbosity > 0:
-            pip_args.append("-{}".format("v" * pip_verbosity))
+            pip_args.append(f'-{"v" * pip_verbosity}')
         else:
             pip_args.append("-q")
 
@@ -327,17 +319,15 @@ class Pip(object):
         extra_env.update(TMPDIR=pip_tmpdir)
 
         with ENV.strip().patch(
-            PEX_ROOT=ENV.PEX_ROOT,
-            PEX_VERBOSE=str(ENV.PEX_VERBOSE),
-            __PEX_UNVENDORED__="1",
-            **extra_env
-        ) as env:
-            # Guard against API calls from environment with ambient PYTHONPATH preventing pip PEX
-            # bootstrapping. See: https://github.com/pantsbuild/pex/issues/892
-            pythonpath = env.pop("PYTHONPATH", None)
-            if pythonpath:
+                PEX_ROOT=ENV.PEX_ROOT,
+                PEX_VERBOSE=str(ENV.PEX_VERBOSE),
+                __PEX_UNVENDORED__="1",
+                **extra_env
+            ) as env:
+            if pythonpath := env.pop("PYTHONPATH", None):
                 TRACER.log(
-                    "Scrubbed PYTHONPATH={} from the pip PEX environment.".format(pythonpath), V=3
+                    f"Scrubbed PYTHONPATH={pythonpath} from the pip PEX environment.",
+                    V=3,
                 )
 
             # Pip has no discernible stdout / stderr discipline with its logging. Pex guarantees
@@ -353,9 +343,9 @@ class Pip(object):
 
             args = self._pip_pex.execute_args(*command)
 
-            rendered_env = " ".join("{}={}".format(key, quote(value)) for key, value in env.items())
+            rendered_env = " ".join(f"{key}={quote(value)}" for key, value in env.items())
             rendered_args = " ".join(quote(s) for s in args)
-            TRACER.log("Executing: {} {}".format(rendered_env, rendered_args), V=3)
+            TRACER.log(f"Executing: {rendered_env} {rendered_args}", V=3)
 
             return args, subprocess.Popen(args=args, env=env, **popen_kwargs)
 
@@ -611,12 +601,11 @@ class Pip(object):
 
         target = target or targets.current()
         interpreter = target.get_interpreter()
-        if target.is_foreign:
-            if compile:
-                raise ValueError(
-                    "Cannot compile bytecode for {} using {} because the wheel has a foreign "
-                    "platform.".format(wheel, interpreter)
-                )
+        if target.is_foreign and compile:
+            raise ValueError(
+                "Cannot compile bytecode for {} using {} because the wheel has a foreign "
+                "platform.".format(wheel, interpreter)
+            )
 
         install_cmd = [
             "install",

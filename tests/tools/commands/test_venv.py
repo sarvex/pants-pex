@@ -59,7 +59,7 @@ def pex():
         # these tests.
         run_pex_command(
             args=[
-                "fabric=={}".format(FABRIC_VERSION),
+                f"fabric=={FABRIC_VERSION}",
                 "--constraints",
                 constraints,
                 "-c",
@@ -77,7 +77,7 @@ def pex():
 def make_env(**kwargs):
     # type: (**Any) -> Dict[str, str]
     env = os.environ.copy()
-    env.update((k, str(v)) for k, v in kwargs.items())
+    env |= ((k, str(v)) for k, v in kwargs.items())
     return env
 
 
@@ -167,7 +167,7 @@ def test_venv_pex(create_pex_venv):
     versions = parse_fabric_version_output(fabric_output.decode("utf-8"))
     assert FABRIC_VERSION == versions["Fabric"]
 
-    invoke_version = "Invoke {}".format(versions["Invoke"])
+    invoke_version = f'Invoke {versions["Invoke"]}'
     invoke_script_output = subprocess.check_output(
         args=[venv_pex, "-V"], env=make_env(PEX_SCRIPT="invoke")
     )
@@ -571,7 +571,7 @@ def test_compile(tmpdir):
     # Ensure all original py files have a compiled counterpart.
     for py_file in venv_py_files:
         if PY2:
-            assert os.path.exists(os.path.join(compile_venv, py_file + "c"))
+            assert os.path.exists(os.path.join(compile_venv, f"{py_file}c"))
         else:
             name, _ = os.path.splitext(os.path.basename(py_file))
             assert os.path.exists(
@@ -736,7 +736,7 @@ def test_custom_prompt(tmpdir):
             "/usr/bin/env",
             "bash",
             "-c",
-            "source {} && echo $PS1".format(os.path.join(venv_dir, "bin", "activate")),
+            f'source {os.path.join(venv_dir, "bin", "activate")} && echo $PS1',
         ],
         env=make_env(TERM="dumb", COLS=80),
     )

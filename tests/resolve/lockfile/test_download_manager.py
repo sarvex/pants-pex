@@ -122,7 +122,7 @@ def test_storage_version_upgrade(
         for root, _, files in os.walk(os.path.dirname(downloaded_artifact1.path))
         for f in files
     )
-    assert len(files) > 0, "We expect at least one metadata file."
+    assert files, "We expect at least one metadata file."
     for f in files:
         os.unlink(f)
 

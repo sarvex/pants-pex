@@ -137,7 +137,7 @@ def main(
         try:
             server.serve_forever()
         except KeyboardInterrupt:
-            print(f"Server shut down in response to keyboard interrupt.")
+            print("Server shut down in response to keyboard interrupt.")
 
 
 if __name__ == "__main__":

@@ -166,7 +166,7 @@ def test_lock_update_repo_migration_nominal(
         assert original_artifact.fingerprint == updated_artifact.fingerprint
         assert original_artifact.url != updated_artifact.url
         assert (
-            "file://{}".format(os.path.join(find_links, original_artifact.filename))
+            f"file://{os.path.join(find_links, original_artifact.filename)}"
             == updated_artifact.url
         )
     assert not artifacts_by_filename

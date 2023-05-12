@@ -97,7 +97,7 @@ def test_pex_sys_exit_prints_non_numeric_value_no_traceback():
     # type: () -> None
     text = "something went wrong"
 
-    sys_exit_arg = '"' + text + '"'
+    sys_exit_arg = f'"{text}"'
     # encode the string somehow that's compatible with 2 and 3
     expected_output = to_bytes(text) + b"\n"
     _test_sys_exit(sys_exit_arg, expected_output, 1)
@@ -173,7 +173,7 @@ def test_minimum_sys_modules():
     assert new_modules == modules
     new_modules = minimum_sys_modules(site_libs=["bad_path"], modules=modules)
     assert new_modules == {}
-    assert tainted_module.__path__ == []  # type: ignore[attr-defined]
+    assert not tainted_module.__path__
 
     # tainted packages cleaned
     tainted_module = ModuleType("tainted_module")
@@ -605,7 +605,7 @@ def test_activate_interpreter_different_from_current():
                 try:
                     pex._activate()
                 except SystemExit as e:
-                    pytest.fail("PEX activation of %s failed with %s" % (pex, e))
+                    pytest.fail(f"PEX activation of {pex} failed with {e}")
 
 
 def test_execute_interpreter_dashc_program():
@@ -676,9 +676,10 @@ def test_execute_interpreter_dashm_module():
         stdout, stderr = process.communicate()
 
         assert 0 == process.returncode
-        assert "{} one two\n".format(
-            os.path.realpath(os.path.join(pex_chroot, "foo/bar.py"))
-        ) == stdout.decode("utf-8")
+        assert (
+            f'{os.path.realpath(os.path.join(pex_chroot, "foo/bar.py"))} one two\n'
+            == stdout.decode("utf-8")
+        )
         assert b"" == stderr
 
 
@@ -716,9 +717,10 @@ def test_execute_interpreter_dashm_module_with_python_options():
         stdout, stderr = process.communicate()
 
         assert b"" == stderr
-        assert "{} one two\n".format(
-            os.path.realpath(os.path.join(pex_chroot, "foo/bar.py"))
-        ) == stdout.decode("utf-8")
+        assert (
+            f'{os.path.realpath(os.path.join(pex_chroot, "foo/bar.py"))} one two\n'
+            == stdout.decode("utf-8")
+        )
         assert 0 == process.returncode
 
 
@@ -783,7 +785,7 @@ def test_execute_interpreter_file_program():
             stdout, stderr = process.communicate()
 
             assert 0 == process.returncode
-            assert "{} one two\n".format(fp.name).encode("utf-8") == stdout
+            assert f"{fp.name} one two\n".encode("utf-8") == stdout
             assert b"" == stderr
 
 
@@ -860,7 +862,7 @@ def test_pex_run_custom_pex_useable():
     # type: () -> None
     old_pex_version = "0.7.0"
     result = resolver.resolve(
-        requirements=["pex=={}".format(old_pex_version), "setuptools==40.6.3"]
+        requirements=[f"pex=={old_pex_version}", "setuptools==40.6.3"]
     )
     dists = [installed_dist.distribution for installed_dist in result.installed_distributions]
     with temporary_dir() as temp_dir:

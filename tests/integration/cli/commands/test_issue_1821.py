@@ -63,7 +63,9 @@ def lock(
     lock_file = os.path.join(
         str(tmpdir),
         "lock{id}.json".format(
-            id="-{}".format("-".join(map(str, target_systems))) if target_systems else ""
+            id=f'-{"-".join(map(str, target_systems))}'
+            if target_systems
+            else ""
         ),
     )
     run_lock(lock_file, extra_args, *target_systems).assert_success()
@@ -97,7 +99,7 @@ def test_target_system_universal(tmpdir):
     ]
     assert len(locks) == len(target_systems_powerset)
 
-    unique_resolves = set(lockfile.locked_resolves for lockfile in locks)
+    unique_resolves = {lockfile.locked_resolves for lockfile in locks}
     assert 1 == len(unique_resolves), "Expected all resolves to be identical."
 
     assert 1 == len(locks[0].locked_resolves)

@@ -439,10 +439,12 @@ class Record(object):
                 for root, _, files in os.walk(site_packages_dir)
                 for f in files
             ]
-            record_relative_path = dist_metadata.find_dist_info_file(
-                project_name, version=version, filename="RECORD", listing=site_packages_listing
-            )
-            if record_relative_path:
+            if record_relative_path := dist_metadata.find_dist_info_file(
+                project_name,
+                version=version,
+                filename="RECORD",
+                listing=site_packages_listing,
+            ):
                 return record_relative_path, site_packages_dir, site_packages_listing
         return None
 
@@ -484,16 +486,15 @@ class Record(object):
     _metadata_listing = attr.ib()  # type: Tuple[str, ...]
 
     def _find_dist_info_file(self, filename):
-        # type: (str) -> Optional[str]
-        metadata_file = dist_metadata.find_dist_info_file(
+        if metadata_file := dist_metadata.find_dist_info_file(
             project_name=self.project_name,
             version=self.version,
             filename=filename,
             listing=self._metadata_listing,
-        )
-        if not metadata_file:
+        ):
+            return os.path.join(self.rel_base_dir, metadata_file)
+        else:
             return None
-        return os.path.join(self.rel_base_dir, metadata_file)
 
     def fixup_install(
         self,
@@ -568,12 +569,11 @@ class Record(object):
             return
 
         console_scripts = {}  # type: Dict[str, EntryPoint]
-        entry_points_relpath = self._find_dist_info_file("entry_points.txt")
-        if entry_points_relpath:
+        if entry_points_relpath := self._find_dist_info_file("entry_points.txt"):
             entry_points_abspath = os.path.join(self.prefix_dir, entry_points_relpath)
-            console_scripts.update(
-                Distribution.parse_entry_map(entry_points_abspath).get("console_scripts", {})
-            )
+            console_scripts |= Distribution.parse_entry_map(
+                entry_points_abspath
+            ).get("console_scripts", {})
 
         scripts = {}  # type: Dict[str, Optional[bytes]]
         for script_name in os.listdir(bin_dir):
@@ -631,9 +631,7 @@ class Record(object):
                     first_non_shebang_line = None
 
     def _fixup_direct_url(self):
-        # type: () -> None
-        direct_url_relpath = self._find_dist_info_file("direct_url.json")
-        if direct_url_relpath:
+        if direct_url_relpath := self._find_dist_info_file("direct_url.json"):
             direct_url_abspath = os.path.join(self.prefix_dir, direct_url_relpath)
             with open(direct_url_abspath) as fp:
                 if urlparse.urlparse(json.load(fp)["url"]).scheme == "file":

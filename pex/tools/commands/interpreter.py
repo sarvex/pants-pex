@@ -64,24 +64,22 @@ class Interpreter(JsonMixin, OutputMixin, PEXCommand):
 
         if ENV.PEX_PYTHON:
             logger.warning(
-                "Ignoring PEX_PYTHON={} in order to scan for all compatible "
-                "interpreters.".format(ENV.PEX_PYTHON)
+                f"Ignoring PEX_PYTHON={ENV.PEX_PYTHON} in order to scan for all compatible interpreters."
             )
         pex_info = pex.pex_info()
-        for interpreter in pex_bootstrapper.iter_compatible_interpreters(
+        yield from pex_bootstrapper.iter_compatible_interpreters(
             path=ENV.PEX_PYTHON_PATH,
             interpreter_constraints=pex_info.interpreter_constraints,
-            interpreter_test=InterpreterTest(entry_point=pex.path(), pex_info=pex_info),
-        ):
-            yield interpreter
+            interpreter_test=InterpreterTest(
+                entry_point=pex.path(), pex_info=pex_info
+            ),
+        )
 
     def run(self, pex):
         # type: (PEX) -> Result
         if self.options.indent and not self.options.verbose:
             logger.warning(
-                "Ignoring --indent={} since --verbose mode is not enabled.".format(
-                    self.options.indent
-                )
+                f"Ignoring --indent={self.options.indent} since --verbose mode is not enabled."
             )
         with self.output(self.options) as out:
             try:

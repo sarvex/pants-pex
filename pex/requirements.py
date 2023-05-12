@@ -41,8 +41,8 @@ class LogicalLine(object):
     def render_location(self):
         # type: () -> str
         if self.start_line == self.end_line:
-            return "{} line {}".format(self.source, self.start_line)
-        return "{} lines {}-{}".format(self.source, self.start_line, self.end_line)
+            return f"{self.source} line {self.start_line}"
+        return f"{self.source} lines {self.start_line}-{self.end_line}"
 
 
 @attr.s(frozen=True)
@@ -188,7 +188,7 @@ def parse_requirement_from_project_name_and_specifier(
         specifier=specifier or SpecifierSet(),
     )
     if marker:
-        requirement_string += ";" + str(marker)
+        requirement_string += f";{str(marker)}"
     return Requirement.parse(requirement_string)
 
 
@@ -251,7 +251,7 @@ class ParseError(Exception):
     ):
         # type: (...) -> None
         super(ParseError, self).__init__(
-            "{}:\n{}\n{}".format(logical_line.render_location(), logical_line.raw_text, msg)
+            f"{logical_line.render_location()}:\n{logical_line.raw_text}\n{msg}"
         )
         self._logical_line = logical_line
 
@@ -285,8 +285,7 @@ class VCSScheme(object):
 
 
 def parse_scheme(scheme):
-    # type: (str) -> Optional[Union[str, ArchiveScheme.Value, VCSScheme]]
-    match = re.match(
+    if match := re.match(
         r"""
         ^
         (?:
@@ -308,15 +307,17 @@ def parse_scheme(scheme):
         """,
         scheme,
         re.VERBOSE,
-    )
-    if not match:
+    ):
+        return (
+            cast(ArchiveScheme.Value, ArchiveScheme.for_value(archive_scheme))
+            if (archive_scheme := match["archive_scheme"])
+            else VCSScheme(
+                vcs=VCS.for_value(match["vcs_type"]),
+                scheme=match["vcs_scheme"],
+            )
+        )
+    else:
         return scheme
-
-    archive_scheme = match.group("archive_scheme")
-    if archive_scheme:
-        return cast(ArchiveScheme.Value, ArchiveScheme.for_value(archive_scheme))
-
-    return VCSScheme(vcs=VCS.for_value(match.group("vcs_type")), scheme=match.group("vcs_scheme"))
 
 
 @attr.s(frozen=True)
@@ -352,9 +353,9 @@ class ProjectNameAndSpecifier(object):
     def _version_as_specifier(version):
         # type: (Text) -> SpecifierSet
         try:
-            return SpecifierSet("=={}".format(Version(version)))
+            return SpecifierSet(f"=={Version(version)}")
         except InvalidVersion:
-            return SpecifierSet("==={}".format(version))
+            return SpecifierSet(f"==={version}")
 
     @classmethod
     def from_project_name_and_version(cls, project_name_and_version):
@@ -424,11 +425,11 @@ def _try_parse_pip_local_formats(
         return None
 
     # Maybe a local archive or project path.
-    requirement_parts = match.group("requirement_parts")
+    requirement_parts = match["requirement_parts"]
     if not requirement_parts:
         return ProjectNameExtrasAndMarker(abs_stripped_path)
 
-    project_requirement = "fake_project{}".format(requirement_parts)
+    project_requirement = f"fake_project{requirement_parts}"
     try:
         req = Requirement.parse(project_requirement)
         return ProjectNameExtrasAndMarker(abs_stripped_path, extras=req.extras, marker=req.marker)
@@ -568,7 +569,9 @@ def _expand_env_var(line, match):
     env_var_name = match.group(1)
     value = os.environ.get(env_var_name)
     if value is None:
-        raise ParseError(line, "No value for environment variable ${} is set.".format(env_var_name))
+        raise ParseError(
+            line, f"No value for environment variable ${env_var_name} is set."
+        )
     return value
 
 
@@ -641,13 +644,12 @@ def parse_requirements(
             if requirement_file or constraint_file:
                 relpath = _get_parameter(logical_line)
                 with source.resolve(
-                    line=logical_line,
-                    origin=relpath,
-                    is_constraints=constraint_file,
-                    fetcher=fetcher,
-                ) as other_source:
-                    for requirement in parse_requirements(other_source, fetcher=fetcher):
-                        yield requirement
+                                    line=logical_line,
+                                    origin=relpath,
+                                    is_constraints=constraint_file,
+                                    fetcher=fetcher,
+                                ) as other_source:
+                    yield from parse_requirements(other_source, fetcher=fetcher)
                 continue
 
             # Skip empty lines, comment lines and all other Pip options.
@@ -697,8 +699,7 @@ def parse_requirement_file(
         return Source.from_file(path=path, is_constraints=is_constraints)
 
     with open_source() as source:
-        for req_info in parse_requirements(source, fetcher=fetcher):
-            yield req_info
+        yield from parse_requirements(source, fetcher=fetcher)
 
 
 def parse_requirement_string(requirement):

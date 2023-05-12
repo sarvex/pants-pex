@@ -234,7 +234,7 @@ def test_extract_lifecycle(pex, pex_tools_env, tmpdir):
     with open(pid_file) as fp:
         _, port = fp.read().strip().split(":", 1)
     example_sdist_pex = os.path.join(str(tmpdir), "example-sdist.pex")
-    find_links_url = "http://localhost:{}".format(port)
+    find_links_url = f"http://localhost:{port}"
     result = run_pex_command(
         args=[
             "--no-pypi",

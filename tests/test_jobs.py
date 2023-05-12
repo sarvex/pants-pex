@@ -42,7 +42,7 @@ def test_sanitize_max_jobs_too_large():
 
 def create_error_job(exit_code):
     # type: (int) -> Job
-    return spawn_python_job(args=["-c", "import sys; sys.exit({})".format(exit_code)])
+    return spawn_python_job(args=["-c", f"import sys; sys.exit({exit_code})"])
 
 
 def test_spawn_wait():

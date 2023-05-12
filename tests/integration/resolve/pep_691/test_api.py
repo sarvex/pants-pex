@@ -31,7 +31,7 @@ def assert_error(
 ):
     # type: (...) -> None
 
-    with pytest.raises(expected_exception_type, match="^{}.*".format(re.escape(prefix))):
+    with pytest.raises(expected_exception_type, match=f"^{re.escape(prefix)}.*"):
         request(url, content_type)
 
 

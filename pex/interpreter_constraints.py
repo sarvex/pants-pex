@@ -182,7 +182,7 @@ class UnsatisfiableInterpreterConstraintsError(Exception):
                              separated by an empty blank line.
         :return: A descriptive message usable for display to an end user.
         """
-        preamble = "{}\n\n".format(preamble) if preamble else ""
+        preamble = f"{preamble}\n\n" if preamble else ""
 
         failures_message = ""
         if self.failures:
@@ -213,7 +213,7 @@ class UnsatisfiableInterpreterConstraintsError(Exception):
                     "Interpreters were found but they all appear to be broken:\n"
                     "{failures}"
                 ).format(preamble=preamble, failures=failures_message)
-            return "{}No interpreters could be found on the system.".format(preamble)
+            return f"{preamble}No interpreters could be found on the system."
 
         binary_column_width = max(len(candidate.binary) for candidate in self.candidates)
         interpreters_format = "{{index}}.) {{binary: >{}}} {{requirement}}".format(
@@ -222,8 +222,8 @@ class UnsatisfiableInterpreterConstraintsError(Exception):
 
         qualifier = ""
         if failures_message:
-            failures_message = "Skipped the following broken interpreters:\n{}".format(
-                failures_message
+            failures_message = (
+                f"Skipped the following broken interpreters:\n{failures_message}"
             )
             qualifier = "working "
 
@@ -241,7 +241,7 @@ class UnsatisfiableInterpreterConstraintsError(Exception):
 
         problems = "\n\n".join(msg for msg in (failures_message, constraints_message) if msg)
         if problems:
-            problems = "\n\n{}".format(problems)
+            problems = f"\n\n{problems}"
 
         return (
             "{preamble}"

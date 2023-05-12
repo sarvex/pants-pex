@@ -60,7 +60,7 @@ def downloaded_sdist(requirement):
             use_wheel=False,
         ).wait()
         dists = os.listdir(download_dir)
-        assert len(dists) == 1, "Expected 1 dist to be downloaded for {}.".format(requirement)
+        assert len(dists) == 1, f"Expected 1 dist to be downloaded for {requirement}."
         sdist = os.path.join(download_dir, dists[0])
         assert sdist.endswith((".sdist", ".tar.gz", ".zip"))
         yield sdist
@@ -68,7 +68,7 @@ def downloaded_sdist(requirement):
 
 def as_requirement(project_name_and_version):
     # type: (ProjectNameAndVersion) -> str
-    return "{}=={}".format(project_name_and_version.project_name, project_name_and_version.version)
+    return f"{project_name_and_version.project_name}=={project_name_and_version.version}"
 
 
 PYGOOGLEEARTH_PROJECT_NAME_AND_VERSION = ProjectNameAndVersion("pygoogleearth", "0.0.2")
@@ -99,7 +99,7 @@ def pip_wheel(pip_tgz_sdist):
     with temporary_dir() as wheel_dir:
         get_pip().spawn_build_wheels([pip_tgz_sdist], wheel_dir=wheel_dir).wait()
         wheels = os.listdir(wheel_dir)
-        assert len(wheels) == 1, "Expected 1 wheel to be built for {}.".format(pip_tgz_sdist)
+        assert len(wheels) == 1, f"Expected 1 wheel to be built for {pip_tgz_sdist}."
         wheel = os.path.join(wheel_dir, wheels[0])
         assert wheel.endswith(".whl")
         yield wheel

@@ -63,7 +63,7 @@ if PY2:
         elif isinstance(st, bytes):
             return st
         else:
-            raise ValueError("Cannot convert %s to bytes" % type(st))
+            raise ValueError(f"Cannot convert {type(st)} to bytes")
 
     def to_unicode(st, encoding="utf-8"):
         # type: (AnyStr, Text) -> Text
@@ -72,7 +72,7 @@ if PY2:
         elif isinstance(st, (str, bytes)):
             return unicode(st, encoding)
         else:
-            raise ValueError("Cannot convert %s to a unicode string" % type(st))
+            raise ValueError(f"Cannot convert {type(st)} to a unicode string")
 
 else:
 
@@ -83,7 +83,7 @@ else:
         elif isinstance(st, bytes):
             return st
         else:
-            raise ValueError("Cannot convert %s to bytes." % type(st))
+            raise ValueError(f"Cannot convert {type(st)} to bytes.")
 
     def to_unicode(st, encoding="utf-8"):
         # type: (AnyStr, Text) -> Text
@@ -92,7 +92,7 @@ else:
         elif isinstance(st, bytes):
             return str(st, encoding)
         else:
-            raise ValueError("Cannot convert %s to a unicode string" % type(st))
+            raise ValueError(f"Cannot convert {type(st)} to a unicode string")
 
 
 _PY3_EXEC_FUNCTION = """
@@ -106,7 +106,7 @@ if PY3:
 
     def exec_function(ast, globals_map):
         locals_map = globals_map
-        exec (ast, globals_map, locals_map)
+        exec(ast, locals_map, locals_map)
         return locals_map
 
 else:
@@ -256,9 +256,7 @@ else:
                 prefix.append(atoms[0])
             else:
                 break
-        if not prefix:
-            return ""
-        return os.path.join(*prefix)
+        return "" if not prefix else os.path.join(*prefix)
 
 
 if PY3:

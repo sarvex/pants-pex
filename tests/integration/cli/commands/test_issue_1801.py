@@ -21,7 +21,7 @@ def test_preserve_pip_download_log():
         r"^pex: Preserving `pip download` log at (?P<log_path>.*)$", result.error, re.MULTILINE
     )
     assert match is not None
-    log_path = match.group("log_path")
+    log_path = match["log_path"]
     assert os.path.exists(log_path)
     expected_url = (
         "https://files.pythonhosted.org/packages/53/18/"

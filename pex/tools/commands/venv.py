@@ -84,11 +84,14 @@ def find_dist(
     project_name,  # type: ProjectName
     dists,  # type: Iterable[Distribution]
 ):
-    # type: (...) -> Optional[Version]
-    for dist in dists:
-        if project_name == dist.metadata.project_name:
-            return dist.metadata.version
-    return None
+    return next(
+        (
+            dist.metadata.version
+            for dist in dists
+            if project_name == dist.metadata.project_name
+        ),
+        None,
+    )
 
 
 _PIP = ProjectName("pip")
@@ -115,8 +118,7 @@ def ensure_pip_installed(
             venv.install_pip()
         except PipUnavailableError as e:
             return Error(
-                "The virtual environment was successfully created, but Pip was not "
-                "installed:\n{}".format(e)
+                f"The virtual environment was successfully created, but Pip was not installed:\n{e}"
             )
         venv_pip_version = find_dist(_PIP, venv.iter_distributions())
         if not venv_pip_version:
@@ -132,8 +134,9 @@ def ensure_pip_installed(
     if pex_pip_version and pex_pip_version != venv_pip_version:
         uninstall[_PIP] = pex_pip_version
 
-    venv_setuptools_version = find_dist(_SETUPTOOLS, venv.iter_distributions())
-    if venv_setuptools_version:
+    if venv_setuptools_version := find_dist(
+        _SETUPTOOLS, venv.iter_distributions()
+    ):
         pex_setuptools_version = find_dist(_SETUPTOOLS, pex.resolve())
         if pex_setuptools_version and venv_setuptools_version != pex_setuptools_version:
             uninstall[_SETUPTOOLS] = pex_setuptools_version
@@ -333,7 +336,7 @@ class Venv(PEXCommand):
             try:
                 pex.interpreter.execute(["-m", "compileall", venv_dir])
             except Executor.NonZeroExit as non_zero_exit:
-                pex_warnings.warn("ignoring compile error {}".format(repr(non_zero_exit)))
+                pex_warnings.warn(f"ignoring compile error {repr(non_zero_exit)}")
 
         if self.options.remove is not None:
             if os.path.isdir(pex.path()):

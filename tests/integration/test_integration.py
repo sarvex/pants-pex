@@ -98,7 +98,7 @@ def assert_empty_home_dir(home_dir):
 
 def test_pex_root_build():
     # type: () -> None
-    with temporary_dir() as td, temporary_dir() as home:
+    with (temporary_dir() as td, temporary_dir() as home):
         buildtime_pex_root = os.path.join(td, "buildtime_pex_root")
         output_dir = os.path.join(td, "output_dir")
 
@@ -108,7 +108,7 @@ def test_pex_root_build():
             "-o",
             output_path,
             "--not-zip-safe",
-            "--pex-root={}".format(buildtime_pex_root),
+            f"--pex-root={buildtime_pex_root}",
         ]
         results = run_pex_command(args=args, env=make_env(HOME=home, PEX_INTERPRETER="1"))
         results.assert_success()
@@ -122,7 +122,7 @@ def test_pex_root_run(pex_project_dir):
     python38 = ensure_python_interpreter(PY38)
     python310 = ensure_python_interpreter(PY310)
 
-    with temporary_dir() as td, temporary_dir() as runtime_pex_root, temporary_dir() as home:
+    with (temporary_dir() as td, temporary_dir() as runtime_pex_root, temporary_dir() as home):
         pex_env = make_env(HOME=home, PEX_PYTHON_PATH=os.pathsep.join((python38, python310)))
 
         buildtime_pex_root = os.path.join(td, "buildtime_pex_root")
@@ -136,8 +136,8 @@ def test_pex_root_run(pex_project_dir):
             "-c",
             "pex",
             "--not-zip-safe",
-            "--pex-root={}".format(buildtime_pex_root),
-            "--runtime-pex-root={}".format(runtime_pex_root),
+            f"--pex-root={buildtime_pex_root}",
+            f"--runtime-pex-root={runtime_pex_root}",
             "--interpreter-constraint=CPython=={version}".format(version=PY38),
         ]
         results = run_pex_command(args=args, env=pex_env, python=python310)
@@ -164,7 +164,7 @@ def test_pex_root_run(pex_project_dir):
 
 def test_cache_disable():
     # type: () -> None
-    with temporary_dir() as td, temporary_dir() as output_dir, temporary_dir() as tmp_home:
+    with (temporary_dir() as td, temporary_dir() as output_dir, temporary_dir() as tmp_home):
         output_path = os.path.join(output_dir, "pex.pex")
         args = [
             "pex",
@@ -172,7 +172,7 @@ def test_cache_disable():
             output_path,
             "--not-zip-safe",
             "--disable-cache",
-            "--pex-root={}".format(td),
+            f"--pex-root={td}",
         ]
         results = run_pex_command(args=args, env=make_env(HOME=tmp_home, PEX_INTERPRETER="1"))
         results.assert_success()
@@ -255,7 +255,7 @@ def test_pex_repl_history(venv_pex):
         # Test that the REPL can see the history.
         env = {"PEX_INTERPRETER_HISTORY": "1", "PEX_INTERPRETER_HISTORY_FILE": history_file}
         stdout, rc = run_simple_pex(pex_path, stdin=stdin_payload, env=env)
-        assert rc == 3, "Failed with: {}".format(stdout.decode("utf-8"))
+        assert rc == 3, f'Failed with: {stdout.decode("utf-8")}'
         assert b">>>" in stdout
         assert b"2 + 2" in stdout
 
@@ -268,7 +268,7 @@ def test_pex_python_symlink():
         os.symlink(sys.executable, symlink_path)
         pexrc_path = os.path.join(td, ".pexrc")
         with open(pexrc_path, "w") as pexrc:
-            pexrc.write("PEX_PYTHON=%s" % symlink_path)
+            pexrc.write(f"PEX_PYTHON={symlink_path}")
 
         body = "print('Hello')"
         _, rc = run_simple_pex_test(body, coverage=True, env=make_env(HOME=td))
@@ -323,8 +323,8 @@ def test_pex_multi_resolve():
                 "--no-build",
                 "--platform=linux-x86_64-cp-36-m",
                 "--platform=macosx-10.9-x86_64-cp-36-m",
-                "--python={}".format(python38),
-                "--python={}".format(python39),
+                f"--python={python38}",
+                f"--python={python39}",
                 "-o",
                 pex_path,
             ]
@@ -379,7 +379,13 @@ def test_pex_path_arg():
 
         # build out.pex composed from pex1/pex1
         run_pex_command(
-            ["--disable-cache", "--pex-path={}".format(pex_path), "wheel", "-o", pex_out_path]
+            [
+                "--disable-cache",
+                f"--pex-path={pex_path}",
+                "wheel",
+                "-o",
+                pex_out_path,
+            ]
         )
 
         # run test.py with composite env
@@ -429,7 +435,9 @@ def test_pex_path_in_pex_info_and_env():
             )
 
         # build out.pex composed from pex1/pex1
-        run_pex_command(["--disable-cache", "--pex-path={}".format(pex_path), "-o", pex_out_path])
+        run_pex_command(
+            ["--disable-cache", f"--pex-path={pex_path}", "-o", pex_out_path]
+        )
 
         # load secondary PEX_PATH
         env = make_env(PEX_PATH=env_pex_path)
@@ -468,7 +476,7 @@ def inherit_path(inherit_path):
             [
                 "--disable-cache",
                 "msgpack_python",
-                "--inherit-path{}".format(inherit_path),
+                f"--inherit-path{inherit_path}",
                 "-o",
                 pex_path,
             ]
@@ -521,7 +529,7 @@ def test_pex_multi_resolve_2():
         for dist_substr in ("-cp27-", "-cp36-", "-manylinux1_x86_64", "-macosx_"):
             assert any(
                 dist_substr in f for f in included_dists
-            ), "{} was not found in wheel".format(dist_substr)
+            ), f"{dist_substr} was not found in wheel"
 
 
 if TYPE_CHECKING:
@@ -539,15 +547,17 @@ def pex_manylinux_and_tag_selection_context():
             extra_flags = extra_flags or ""
             pex_path = os.path.join(output_dir, "test.pex")
             results = run_pex_command(
-                [
-                    "--disable-cache",
-                    "--no-build",
-                    "%s==%s" % (req_name, req_version),
-                    "--platform=%s" % platform,
-                    "-o",
-                    pex_path,
-                ]
-                + extra_flags.split()
+                (
+                    [
+                        "--disable-cache",
+                        "--no-build",
+                        f"{req_name}=={req_version}",
+                        f"--platform={platform}",
+                        "-o",
+                        pex_path,
+                    ]
+                    + extra_flags.split()
+                )
             )
             return pex_path, results
 
@@ -580,8 +590,10 @@ def test_pex_manylinux_and_tag_selection_linux_msgpack():
         if current_version != (3, 3) and current_version < (3, 6):
             ver = "{}{}".format(*current_version)
             test_msgpack(
-                "linux-x86_64-cp-{}-m".format(ver),
-                "msgpack_python-0.4.7-cp{ver}-cp{ver}m-manylinux1_x86_64.whl".format(ver=ver),
+                f"linux-x86_64-cp-{ver}-m",
+                "msgpack_python-0.4.7-cp{ver}-cp{ver}m-manylinux1_x86_64.whl".format(
+                    ver=ver
+                ),
             )
 
         test_msgpack(
@@ -821,8 +833,8 @@ def test_multiplatform_entrypoint():
             [
                 "p537==1.0.5",
                 "--no-build",
-                "--python={}".format(interpreter),
-                "--python-shebang=#!{}".format(interpreter),
+                f"--python={interpreter}",
+                f"--python-shebang=#!{interpreter}",
                 "--platform=linux-x86_64-cp-37-m",
                 "--platform=macosx-10.15-x86_64-cp-37-m",
                 "-c",
@@ -921,7 +933,13 @@ def test_setup_python():
     with temporary_dir() as out:
         pex = os.path.join(out, "pex.pex")
         results = run_pex_command(
-            ["jsonschema==2.6.0", "--disable-cache", "--python={}".format(interpreter), "-o", pex]
+            [
+                "jsonschema==2.6.0",
+                "--disable-cache",
+                f"--python={interpreter}",
+                "-o",
+                pex,
+            ]
         )
         results.assert_success()
         subprocess.check_call([pex, "-c", "import jsonschema"])
@@ -940,7 +958,7 @@ def test_setup_interpreter_constraint():
             [
                 "jsonschema==2.6.0",
                 "--disable-cache",
-                "--interpreter-constraint=CPython=={}".format(PY39),
+                f"--interpreter-constraint=CPython=={PY39}",
                 "-o",
                 pex,
             ],
@@ -965,10 +983,8 @@ def test_setup_python_path():
             [
                 "more-itertools==5.0.0",
                 "--disable-cache",
-                "--interpreter-constraint=CPython>={},<={}".format(PY38, PY39),
-                "--python-path={}".format(
-                    os.pathsep.join([py38_interpreter_dir, py39_interpreter_dir])
-                ),
+                f"--interpreter-constraint=CPython>={PY38},<={PY39}",
+                f"--python-path={os.pathsep.join([py38_interpreter_dir, py39_interpreter_dir])}",
                 "-o",
                 pex,
             ],
@@ -1010,8 +1026,8 @@ def test_setup_python_multiple_transitive_markers():
                 "jsonschema==2.6.0",
                 "--disable-cache",
                 "--python-shebang=#!/usr/bin/env python",
-                "--python={}".format(py27_interpreter),
-                "--python={}".format(py310_interpreter),
+                f"--python={py27_interpreter}",
+                f"--python={py310_interpreter}",
                 "-o",
                 pex,
             ]
@@ -1049,7 +1065,7 @@ def test_setup_python_direct_markers():
                 'subprocess32==3.2.7; python_version<"3"',
                 "--disable-cache",
                 "--python-shebang=#!/usr/bin/env python",
-                "--python={}".format(py310_interpreter),
+                f"--python={py310_interpreter}",
                 "-o",
                 pex,
             ]
@@ -1077,8 +1093,8 @@ def test_setup_python_multiple_direct_markers():
                 'subprocess32==3.2.7; python_version<"3"',
                 "--disable-cache",
                 "--python-shebang=#!/usr/bin/env python",
-                "--python={}".format(py310_interpreter),
-                "--python={}".format(py27_interpreter),
+                f"--python={py310_interpreter}",
+                f"--python={py27_interpreter}",
                 "-o",
                 pex,
             ]
@@ -1178,11 +1194,11 @@ def test_pex_run_strip_env():
         stripped_pex_file = os.path.join(td, "stripped.pex")
         results = run_pex_command(
             args=[
-                "--sources-directory={}".format(src_dir),
+                f"--sources-directory={src_dir}",
                 "--entry-point=print_pex_env",
                 "-o",
                 stripped_pex_file,
-            ],
+            ]
         )
         results.assert_success()
         assert {} == json.loads(
@@ -1192,12 +1208,12 @@ def test_pex_run_strip_env():
         unstripped_pex_file = os.path.join(td, "unstripped.pex")
         results = run_pex_command(
             args=[
-                "--sources-directory={}".format(src_dir),
+                f"--sources-directory={src_dir}",
                 "--entry-point=print_pex_env",
                 "--no-strip-pex-env",
                 "-o",
                 unstripped_pex_file,
-            ],
+            ]
         )
         results.assert_success()
         assert pex_env == json.loads(
@@ -1238,7 +1254,9 @@ def test_pex_cache_dir_and_pex_root():
         ).assert_success()
 
         dists = list(iter_distributions(pex_root=cache_dir, project_name="p537"))
-        assert 1 == len(dists), "Expected to find exactly one distribution, found {}".format(dists)
+        assert 1 == len(
+            dists
+        ), f"Expected to find exactly one distribution, found {dists}"
 
         for directory in cache_dir, pex_root:
             safe_rmtree(directory)
@@ -1683,7 +1701,7 @@ def test_console_script_from_pex_path(tmpdir):
 )
 def test_invalid_macosx_platform_tag(tmpdir):
     # type: (Any) -> None
-    if not any((3, 8) == pi.version[:2] for pi in PythonInterpreter.iter()):
+    if all((3, 8) != pi.version[:2] for pi in PythonInterpreter.iter()):
         pytest.skip("Test requires a system Python 3.8 interpreter.")
 
     repository_pex = os.path.join(str(tmpdir), "repository.pex")

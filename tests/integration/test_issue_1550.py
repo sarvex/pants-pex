@@ -33,7 +33,9 @@ def test_duplicate_requirements_issues_1550(tmpdir):
     subprocess.check_call(args=[pex_file, "-c", "import jwt"])
     pex_info = PexInfo.from_pex(pex_file)
     assert 1 == len(pex_info.distributions)
-    assert ProjectNameAndVersion("PyJWT", "1.7.1") == dist_metadata.project_name_and_version(
+    assert ProjectNameAndVersion(
+        "PyJWT", "1.7.1"
+    ) == dist_metadata.project_name_and_version(
         next(iter(pex_info.distributions.keys()))
-    ), "ex_info.distributions: {}".format(pex_info.distributions)
+    ), f"ex_info.distributions: {pex_info.distributions}"
     assert OrderedSet(("PyJWT", "PyJWT==1.7.1")) == pex_info.requirements

@@ -103,9 +103,7 @@ class ArtifactURL(object):
 
 def _convert_url(value):
     # type: (Union[str, ArtifactURL]) -> ArtifactURL
-    if isinstance(value, ArtifactURL):
-        return value
-    return ArtifactURL.parse(value)
+    return value if isinstance(value, ArtifactURL) else ArtifactURL.parse(value)
 
 
 @attr.s(frozen=True)
@@ -126,8 +124,7 @@ class ResolvedRequirement(object):
     def iter_artifacts(self):
         # type: () -> Iterator[PartialArtifact]
         yield self.artifact
-        for artifact in self.additional_artifacts:
-            yield artifact
+        yield from self.additional_artifacts
 
     def iter_artifacts_to_fingerprint(self):
         # type: () -> Iterator[PartialArtifact]

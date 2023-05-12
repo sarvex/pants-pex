@@ -62,8 +62,8 @@ else:
         return _never_called_since_structurally_shadowed
 
     class _Generic(type):
-        def __getitem__(cls, type_var):
-            return cls
+        def __getitem__(self, type_var):
+            return self
 
     if sys.version_info[0] == 2:
 

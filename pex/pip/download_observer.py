@@ -61,7 +61,7 @@ class PatchSet(object):
         # type: () -> Dict[str, str]
         env = {}  # type: Dict[str, str]
         for patch in self.patches:
-            env.update(patch.env)
+            env |= patch.env
         return env
 
     def emit_patches(self, package):

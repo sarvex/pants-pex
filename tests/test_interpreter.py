@@ -118,7 +118,7 @@ class TestPythonInterpreter(object):
 
         matches = PythonInterpreter._matches_binary_name
         for name in valid_binary_names:
-            assert matches(name), "Expected {} to be valid binary name".format(name)
+            assert matches(name), f"Expected {name} to be valid binary name"
 
     def test_iter_interpreter_some(self, test_interpreter1, test_interpreter2):
         # type: (str, str) -> None
@@ -348,16 +348,16 @@ def test_detect_pyvenv(tmpdir):
 
     assert (
         len(canonical_to_python) == 1
-    ), "Expected exactly one canonical venv python, found: {}".format(canonical_to_python)
+    ), f"Expected exactly one canonical venv python, found: {canonical_to_python}"
     canonical, pythons = canonical_to_python.popitem()
 
     real_python = os.path.realpath(py38)
     assert canonical != real_python
     assert os.path.dirname(canonical) == venv_bin_dir
     assert os.path.realpath(canonical) == real_python
-    assert len(pythons) >= 2, "Expected at least two virtualenv python binaries, found: {}".format(
-        pythons
-    )
+    assert (
+        len(pythons) >= 2
+    ), f"Expected at least two virtualenv python binaries, found: {pythons}"
 
 
 def check_resolve_venv(real_interpreter):
@@ -462,8 +462,7 @@ def test_issue_1494_job_error_not_identification_error(
         with pytest.raises(Job.Error) as exc_info:
             spawned_job.await_result()
         exc_info.match(
-            r"^Expected job to create file '{}/interpreters/[0-9a-f/]+/INTERP-INFO' "
-            r"but it did not exist or could not be read: ".format(re.escape(pex_root))
+            f"^Expected job to create file '{re.escape(pex_root)}/interpreters/[0-9a-f/]+/INTERP-INFO' but it did not exist or could not be read: "
         )
         exc_info.match(
             r"\n"

@@ -542,15 +542,11 @@ class WheelBuilder(object):
         for build_request in build_requests:
             build_result = build_request.result(dist_root)
             if not build_result.is_built:
-                TRACER.log(
-                    "Building {} to {}".format(build_request.source_path, build_result.dist_dir)
-                )
+                TRACER.log(f"Building {build_request.source_path} to {build_result.dist_dir}")
                 unsatisfied_build_requests.append(build_request)
             else:
                 TRACER.log(
-                    "Using cached build of {} at {}".format(
-                        build_request.source_path, build_result.dist_dir
-                    )
+                    f"Using cached build of {build_request.source_path} at {build_result.dist_dir}"
                 )
                 build_results[build_request.source_path].add(build_result.finalize_build())
         return unsatisfied_build_requests, build_results
@@ -654,17 +650,13 @@ class BuildAndInstallRequest(object):
             install_result = install_request.result(installed_wheels_dir)
             if not install_result.is_installed:
                 TRACER.log(
-                    "Installing {} in {}".format(
-                        install_request.wheel_path, install_result.install_chroot
-                    ),
+                    f"Installing {install_request.wheel_path} in {install_result.install_chroot}",
                     V=2,
                 )
                 unsatisfied_install_requests.append(install_request)
             else:
                 TRACER.log(
-                    "Using cached installation of {} at {}".format(
-                        install_request.wheel_file, install_result.install_chroot
-                    ),
+                    f"Using cached installation of {install_request.wheel_file} at {install_result.install_chroot}",
                     V=2,
                 )
                 install_results.append(install_result)
@@ -890,16 +882,9 @@ class BuildAndInstallRequest(object):
                 if not target.requirement_applies(requirement):
                     continue
 
-                installed_requirement_dist = installed_distribution_by_project_name.get(
+                if installed_requirement_dist := installed_distribution_by_project_name.get(
                     requirement.project_name
-                )
-                if not installed_requirement_dist:
-                    unsatisfied.append(
-                        "{dist} requires {requirement} but no version was resolved".format(
-                            dist=dist.as_requirement(), requirement=requirement
-                        )
-                    )
-                else:
+                ):
                     installed_dist = installed_requirement_dist.distribution
                     if not requirement.specifier.contains(installed_dist.version, prereleases=True):
                         unsatisfied.append(
@@ -910,6 +895,12 @@ class BuildAndInstallRequest(object):
                             )
                         )
 
+                else:
+                    unsatisfied.append(
+                        "{dist} requires {requirement} but no version was resolved".format(
+                            dist=dist.as_requirement(), requirement=requirement
+                        )
+                    )
         if unsatisfied:
             raise Unsatisfiable(
                 "Failed to resolve compatible distributions:\n{failures}".format(

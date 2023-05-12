@@ -133,9 +133,7 @@ class CredentialedURL(object):
     @property
     def has_redacted_credentials(self):
         # type: () -> bool
-        if self.credentials is None:
-            return False
-        return self.credentials.are_redacted()
+        return False if self.credentials is None else self.credentials.are_redacted()
 
     def strip_credentials(self):
         # type: () -> CredentialedURL
@@ -235,8 +233,8 @@ class ArtifactBuildObserver(object):
         if not match:
             return None
 
-        version = Version(match.group("version"))
-        requirement = Requirement.parse(match.group("requirement"))
+        version = Version(match["version"])
+        requirement = Requirement.parse(match["requirement"])
         pin = Pin(project_name=requirement.project_name, version=version)
         return ArtifactBuildResult(
             url=self._artifact_url,
@@ -297,12 +295,11 @@ class Locker(LogAnalyzer):
         # type: (ArtifactURL) -> Tuple[Pin, PartialArtifact]
 
         fingerprint = None  # type: Optional[Fingerprint]
-        fingerprint_match = re.search(
+        if fingerprint_match := re.search(
             r"[^#]+#(?P<algorithm>[^=]+)=(?P<hash>.*)$", artifact_url.raw_url
-        )
-        if fingerprint_match:
-            algorithm = fingerprint_match.group("algorithm")
-            hash_ = fingerprint_match.group("hash")
+        ):
+            algorithm = fingerprint_match["algorithm"]
+            hash_ = fingerprint_match["hash"]
             fingerprint = Fingerprint(algorithm=algorithm, hash=hash_)
 
         pin = Pin.canonicalize(ProjectNameAndVersion.from_filename(artifact_url.path))
@@ -341,8 +338,7 @@ class Locker(LogAnalyzer):
                 self._artifact_build_observer = None
                 return self.Continue()
 
-            build_result = self._artifact_build_observer.build_result(line)
-            if build_result:
+            if build_result := self._artifact_build_observer.build_result(line):
                 artifact_url = build_result.url
                 source_fingerprint = None  # type: Optional[Fingerprint]
                 verified = False
@@ -372,7 +368,7 @@ class Locker(LogAnalyzer):
                         source_fingerprint = Fingerprint.from_digest(digest)
                         verified = True
                     self._selected_path_to_pin[selected_path] = build_result.pin
-                elif "file" == artifact_url.scheme:
+                elif artifact_url.scheme == "file":
                     digest = Sha256()
                     if os.path.isfile(artifact_url.path):
                         hashing.file_hash(artifact_url.path, digest)
@@ -413,27 +409,28 @@ class Locker(LogAnalyzer):
                 )
             return self.Continue()
 
-        match = re.search(
+        if match := re.search(
             r"Fetched page (?P<index_url>[^\s]+) as (?P<content_type>{content_types})".format(
                 content_types="|".join(
-                    re.escape(content_type) for content_type in self._fingerprint_service.accept
+                    re.escape(content_type)
+                    for content_type in self._fingerprint_service.accept
                 )
             ),
             line,
-        )
-        if match:
+        ):
             self._pep_691_endpoints.add(
-                Endpoint(url=match.group("index_url"), content_type=match.group("content_type"))
+                Endpoint(
+                    url=match["index_url"], content_type=match["content_type"]
+                )
             )
             return self.Continue()
 
-        match = re.search(
+        if match := re.search(
             r"Added (?P<requirement>.+) from (?P<url>[^\s]+) .*to build tracker",
             line,
-        )
-        if match:
-            raw_requirement = match.group("requirement")
-            url = ArtifactURL.parse(match.group("url"))
+        ):
+            raw_requirement = match["requirement"]
+            url = ArtifactURL.parse(match["url"])
             if url.is_wheel:
                 requirement = Requirement.parse(raw_requirement)
                 pin, partial_artifact = self._extract_resolve_data(url)
@@ -460,9 +457,10 @@ class Locker(LogAnalyzer):
                 )
             return self.Continue()
 
-        match = re.search(r"Added (?P<file_url>file:.+) to build tracker", line)
-        if match:
-            file_url = match.group("file_url")
+        if match := re.search(
+            r"Added (?P<file_url>file:.+) to build tracker", line
+        ):
+            file_url = match["file_url"]
             self._artifact_build_observer = ArtifactBuildObserver(
                 done_building_pattern=re.compile(
                     r"Removed .+ from {file_url} from build tracker".format(
@@ -473,16 +471,16 @@ class Locker(LogAnalyzer):
             )
             return self.Continue()
 
-        match = re.search(r"Saved (?P<file_path>.+)$", line)
-        if match:
-            saved_path = match.group("file_path")
+        if match := re.search(r"Saved (?P<file_path>.+)$", line):
+            saved_path = match["file_path"]
             self._saved.add(self._selected_path_to_pin[os.path.basename(saved_path)])
             return self.Continue()
 
-        if self.style in (LockStyle.SOURCES, LockStyle.UNIVERSAL):
-            match = re.search(r"Found link (?P<url>[^\s]+)(?: \(from .*\))?, version: ", line)
-            if match:
-                url = ArtifactURL.parse(match.group("url"))
+        if match := re.search(
+            r"Found link (?P<url>[^\s]+)(?: \(from .*\))?, version: ", line
+        ):
+            if self.style in (LockStyle.SOURCES, LockStyle.UNIVERSAL):
+                url = ArtifactURL.parse(match["url"])
                 pin, partial_artifact = self._extract_resolve_data(url)
                 self._links[pin][url] = partial_artifact
                 return self.Continue()

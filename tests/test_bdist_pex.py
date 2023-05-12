@@ -51,7 +51,7 @@ def bdist_pex(project_dir, bdist_args=None):
             "--command-packages",
             "pex.commands",
             "bdist_pex",
-            "--bdist-dir={}".format(dist_dir),
+            f"--bdist-dir={dist_dir}",
         ]
         if bdist_args:
             cmd.extend(bdist_args)
@@ -78,7 +78,7 @@ def assert_entry_points(entry_points, bdist_args=None):
 def assert_pex_args_shebang(shebang):
     # type: (str) -> None
     with make_project() as project_dir:
-        pex_args = '--pex-args=--python-shebang="{}"'.format(shebang)
+        pex_args = f'--pex-args=--python-shebang="{shebang}"'
         with bdist_pex(project_dir, bdist_args=[pex_args]) as (my_app_pex,):
             with open(my_app_pex, "rb") as fp:
                 assert fp.readline().decode().rstrip() == shebang
@@ -184,19 +184,17 @@ def test_unwriteable_contents():
 
     UNWRITEABLE_PERMS = 0o400
     with temporary_content(
-        {
-            "setup.py": my_app_setup_py,
-            "my_app/__init__.py": "",
-            "my_app/unwriteable.so": "so contents",
-        },
-        perms=UNWRITEABLE_PERMS,
-    ) as my_app_project_dir:
+            {
+                "setup.py": my_app_setup_py,
+                "my_app/__init__.py": "",
+                "my_app/unwriteable.so": "so contents",
+            },
+            perms=UNWRITEABLE_PERMS,
+        ) as my_app_project_dir:
         my_app_whl = WheelBuilder(my_app_project_dir).bdist()
 
         with make_project(name="uses_my_app", install_reqs=["my_app"]) as uses_my_app_project_dir:
-            pex_args = "--pex-args=--disable-cache --pip-version=vendored --no-pypi -f {}".format(
-                os.path.dirname(my_app_whl)
-            )
+            pex_args = f"--pex-args=--disable-cache --pip-version=vendored --no-pypi -f {os.path.dirname(my_app_whl)}"
             with bdist_pex(uses_my_app_project_dir, bdist_args=[pex_args]) as (uses_my_app_pex,):
                 with open_zip(uses_my_app_pex) as zf:
                     unwriteable_sos = [

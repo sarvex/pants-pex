@@ -41,7 +41,7 @@ class Pyenv(object):
 
             if pyenv_root:
                 pyenv = cls(pyenv_root)
-                TRACER.log("A pyenv installation was found: {}".format(pyenv), V=6)
+                TRACER.log(f"A pyenv installation was found: {pyenv}", V=6)
                 return pyenv
 
             TRACER.log("No pyenv installation was found.", V=6)
@@ -104,29 +104,28 @@ class Pyenv(object):
 
             If the shim is not activated, returns `None`.
             """
-            with TRACER.timed("Calculating active version for {}...".format(self), V=6):
-                active_versions = self.pyenv.active_versions(search_dir=search_dir)
-                if active_versions:
+            with TRACER.timed(f"Calculating active version for {self}...", V=6):
+                if active_versions := self.pyenv.active_versions(
+                    search_dir=search_dir
+                ):
                     binary_name = os.path.basename(self.path)
                     if self.name == "python" and not self.major and not self.minor:
                         for pyenv_version in active_versions:
                             if pyenv_version[0] in self._PYENV_CPYTHON_VERSION_LEADING_CHARS:
-                                TRACER.log(
-                                    "{} has active version {}".format(self, pyenv_version), V=6
-                                )
+                                TRACER.log(f"{self} has active version {pyenv_version}", V=6)
                                 return self.pyenv.python(pyenv_version, binary_name=binary_name)
 
                     prefix = "{name}{major}{minor}".format(
                         name="" if self.name == "python" else self.name,
                         major=self.major or "",
-                        minor=".{}".format(self.minor) if self.minor else "",
+                        minor=f".{self.minor}" if self.minor else "",
                     )
                     for pyenv_version in active_versions:
                         if pyenv_version.startswith(prefix):
-                            TRACER.log("{} has active version {}".format(self, pyenv_version), V=6)
+                            TRACER.log(f"{self} has active version {pyenv_version}", V=6)
                             return self.pyenv.python(pyenv_version, binary_name=binary_name)
 
-                TRACER.log("{} is not activated.".format(self), V=6)
+                TRACER.log(f"{self} is not activated.", V=6)
                 return None
 
     def as_shim(self, binary):
@@ -139,8 +138,7 @@ class Pyenv(object):
         # type: (str) -> Iterator[str]
         with open(version_file) as fp:
             for line in fp:
-                for version in line.strip().split():
-                    yield version
+                yield from line.strip().split()
 
     @staticmethod
     def _find_local_version_file(search_dir):
@@ -161,19 +159,17 @@ class Pyenv(object):
         source_and_versions = None  # type: Optional[Tuple[str, Iterable[str]]]
 
         # See: https://github.com/pyenv/pyenv#choosing-the-python-version
-        with TRACER.timed("Finding {} active versions...".format(self), V=6):
-            shell_version = os.environ.get("PYENV_VERSION")
-            if shell_version:
+        with TRACER.timed(f"Finding {self} active versions...", V=6):
+            if shell_version := os.environ.get("PYENV_VERSION"):
                 source_and_versions = (
-                    "PYENV_VERSION={}".format(shell_version),
+                    f"PYENV_VERSION={shell_version}",
                     shell_version.split(":"),
                 )
             else:
                 cwd = search_dir if search_dir is not None else os.getcwd()
-                TRACER.log("Looking for pyenv version files starting from {}.".format(cwd), V=6)
+                TRACER.log(f"Looking for pyenv version files starting from {cwd}.", V=6)
 
-                local_version = self._find_local_version_file(search_dir=cwd)
-                if local_version:
+                if local_version := self._find_local_version_file(search_dir=cwd):
                     source_and_versions = (local_version, self._read_pyenv_versions(local_version))
                 else:
                     global_version = os.path.join(self.root, "version")
@@ -185,7 +181,7 @@ class Pyenv(object):
 
         if source_and_versions:
             source, versions = source_and_versions
-            TRACER.log("Found active versions in {}: {}".format(source, versions), V=6)
+            TRACER.log(f"Found active versions in {source}: {versions}", V=6)
             return tuple(versions)
 
         TRACER.log("Found no active pyenv versions.", V=6)

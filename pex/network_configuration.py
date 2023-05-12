@@ -37,12 +37,12 @@ class NetworkConfiguration(object):
     def _validate_retries(self, attribute, value):
         if value < 0:
             raise ValueError(
-                "The {} parameter should be >= 0; given: {}".format(attribute.name, value)
+                f"The {attribute.name} parameter should be >= 0; given: {value}"
             )
 
     @timeout.validator
     def _validate_timeout(self, attribute, value):
         if value <= 0:
             raise ValueError(
-                "The {} parameter should be > 0; given: {}".format(attribute.name, value)
+                f"The {attribute.name} parameter should be > 0; given: {value}"
             )

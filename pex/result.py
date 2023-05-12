@@ -54,7 +54,9 @@ class Error(Result):
     ):
         # type: (...) -> None
         if exit_code == 0:
-            raise ValueError("An Error must have a non-zero exit code; given: {}".format(exit_code))
+            raise ValueError(
+                f"An Error must have a non-zero exit code; given: {exit_code}"
+            )
         super(Error, self).__init__(exit_code=exit_code, message=message)
 
 

@@ -40,11 +40,7 @@ class DistributionHelper(object):
         :param dir_location: create a new temporary directory inside, or None to have one created
         :returns temp_dir: Temporary directory with the zipped assets inside
         """
-        if dir_location is None:
-            temp_dir = safe_mkdtemp()
-        else:
-            temp_dir = dir_location
-
+        temp_dir = safe_mkdtemp() if dir_location is None else dir_location
         module = importlib.import_module(static_module_name)
         # N.B.: This handles namespace packages new and old.
         paths = OrderedSet(os.path.realpath(d) for d in getattr(module, "__path__", []))

@@ -50,15 +50,14 @@ class InterpreterConfiguration(object):
                 def to_python_interpreter(full_path_or_basename):
                     if os.path.isfile(full_path_or_basename):
                         return PythonInterpreter.from_binary(full_path_or_basename)
-                    else:
-                        interpreter = PythonInterpreter.from_env(
-                            full_path_or_basename, paths=normalize_path(self.python_path)
+                    interpreter = PythonInterpreter.from_env(
+                        full_path_or_basename, paths=normalize_path(self.python_path)
+                    )
+                    if interpreter is None:
+                        raise InterpreterNotFound(
+                            "Failed to find interpreter: {}".format(full_path_or_basename)
                         )
-                        if interpreter is None:
-                            raise InterpreterNotFound(
-                                "Failed to find interpreter: {}".format(full_path_or_basename)
-                            )
-                        return interpreter
+                    return interpreter
 
                 for python in self.pythons:
                     yield to_python_interpreter(python)
@@ -66,11 +65,10 @@ class InterpreterConfiguration(object):
         if self.interpreter_constraints:
             with TRACER.timed("Resolving interpreters", V=2):
                 try:
-                    for interp in iter_compatible_interpreters(
+                    yield from iter_compatible_interpreters(
                         path=self.python_path,
                         interpreter_constraints=self.interpreter_constraints,
-                    ):
-                        yield interp
+                    )
                 except UnsatisfiableInterpreterConstraintsError as e:
                     raise InterpreterConstraintsNotSatisfied(
                         e.create_message("Could not find a compatible interpreter.")
@@ -112,32 +110,20 @@ def _interpreter_compatible_platforms(
         # the interpreter but not the complete platform may result in incompatible wheels being
         # chosen, if the interpreter was used directly
         interpreter_platform = CompletePlatform.from_interpreter(candidate_interpreter)
-        missing_tags = set(interpreter_platform.supported_tags) - set(
+        if missing_tags := set(interpreter_platform.supported_tags) - set(
             requested_complete.supported_tags
-        )
-        if missing_tags:
+        ):
             TRACER.log(
-                "Rejected candidate interpreter {} for complete platform {} since interpreter supports {} extra tags".format(
-                    candidate_interpreter,
-                    requested_complete.platform,
-                    len(missing_tags),
-                ),
+                f"Rejected candidate interpreter {candidate_interpreter} for complete platform {requested_complete.platform} since interpreter supports {len(missing_tags)} extra tags",
                 V=3,
             )
             TRACER.log(
-                "Extra tags supported by {} but not supported by requested complete platform {}: {}".format(
-                    candidate_interpreter,
-                    requested_complete.platform,
-                    ", ".join(map(str, missing_tags)),
-                ),
+                f'Extra tags supported by {candidate_interpreter} but not supported by requested complete platform {requested_complete.platform}: {", ".join(map(str, missing_tags))}',
                 V=9,
             )
         else:
             TRACER.log(
-                "Accepted resolution of {} for complete platform {}".format(
-                    candidate_interpreter,
-                    requested_complete,
-                ),
+                f"Accepted resolution of {candidate_interpreter} for complete platform {requested_complete}",
                 V=3,
             )
             compatible_complete_platforms.append(requested_complete)
@@ -189,36 +175,28 @@ class TargetConfiguration(object):
             platform_strs = list(map(str, requested_complete_platforms)) + list(
                 map(str, requested_platforms)
             )
-            with TRACER.timed(
-                "Searching for local interpreters matching {}".format(", ".join(platform_strs))
-            ):
+            with TRACER.timed(f'Searching for local interpreters matching {", ".join(platform_strs)}'):
                 candidate_interpreters = OrderedSet(
                     iter_compatible_interpreters(path=self.interpreter_configuration.python_path)
                 )  # type: OrderedSet[PythonInterpreter]
                 candidate_interpreters.add(PythonInterpreter.get())
                 for candidate_interpreter in candidate_interpreters:
-                    resolved_platforms = candidate_interpreter.supported_platforms.intersection(
+                    if resolved_platforms := candidate_interpreter.supported_platforms.intersection(
                         requested_platforms
-                    )
-                    if resolved_platforms:
+                    ):
                         for resolved_platform in resolved_platforms:
                             TRACER.log(
-                                "Resolved {} for platform {}".format(
-                                    candidate_interpreter, resolved_platform
-                                )
+                                f"Resolved {candidate_interpreter} for platform {resolved_platform}"
                             )
                             requested_platforms.remove(resolved_platform)
                         interpreters.add(candidate_interpreter)
 
-                    resolved_complete_platforms = _interpreter_compatible_platforms(
+                    if resolved_complete_platforms := _interpreter_compatible_platforms(
                         requested_complete_platforms, candidate_interpreter
-                    )
-                    if resolved_complete_platforms:
+                    ):
                         for resolved_complete_platform in resolved_complete_platforms:
                             TRACER.log(
-                                "Resolved {} for complete platform {}".format(
-                                    candidate_interpreter, resolved_complete_platform
-                                )
+                                f"Resolved {candidate_interpreter} for complete platform {resolved_complete_platform}"
                             )
                             requested_complete_platforms.remove(resolved_complete_platform)
                         interpreters.add(candidate_interpreter)
@@ -228,11 +206,7 @@ class TargetConfiguration(object):
                     map(str, requested_platforms)
                 )
                 TRACER.log(
-                    "Could not resolve a local interpreter for {}, will resolve only binary "
-                    "distributions for {}.".format(
-                        ", ".join(platform_strs),
-                        "this platform" if len(platform_strs) == 1 else "these platforms",
-                    )
+                    f'Could not resolve a local interpreter for {", ".join(platform_strs)}, will resolve only binary distributions for {"this platform" if len(platform_strs) == 1 else "these platforms"}.'
                 )
 
         return Targets(

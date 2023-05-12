@@ -226,7 +226,7 @@ class PEXEnvironment(object):
         pex_hash = pex_info.pex_hash
         if pex_hash is None:
             raise AssertionError(
-                "There was no pex_hash stored in {} for {}.".format(PexInfo.PATH, pex)
+                f"There was no pex_hash stored in {PexInfo.PATH} for {pex}."
             )
         target = target or targets.current()
         key = (pex_file, pex_hash, target)
@@ -266,7 +266,7 @@ class PEXEnvironment(object):
     def iter_distributions(self):
         # type: () -> Iterator[FingerprintedDistribution]
         internal_cache = os.path.join(self._pex, self._pex_info.internal_cache)
-        with TRACER.timed("Searching dependency cache: %s" % internal_cache, V=2):
+        with TRACER.timed(f"Searching dependency cache: {internal_cache}", V=2):
             for distribution_name, fingerprint in self._pex_info.distributions.items():
                 dist_path = os.path.join(internal_cache, distribution_name)
                 yield FingerprintedDistribution(
@@ -280,7 +280,7 @@ class PEXEnvironment(object):
             ranked_dist = self._can_add(fingerprinted_dist)
             project_name = fingerprinted_dist.project_name
             if isinstance(ranked_dist, _RankedDistribution):
-                with TRACER.timed("Adding %s" % fingerprinted_dist.distribution, V=2):
+                with TRACER.timed(f"Adding {fingerprinted_dist.distribution}", V=2):
                     self._available_ranked_dists_by_project_name[project_name].append(ranked_dist)
             else:
                 self._unavailable_dists_by_project_name[project_name].append(ranked_dist)
@@ -317,7 +317,7 @@ class PEXEnvironment(object):
     def activate(self):
         # type: () -> Iterable[Distribution]
         if self._activated_dists is None:
-            with TRACER.timed("Activating PEX virtual environment from %s" % self._pex):
+            with TRACER.timed(f"Activating PEX virtual environment from {self._pex}"):
                 self._activated_dists = self._activate()
         return self._activated_dists
 
@@ -330,9 +330,7 @@ class PEXEnvironment(object):
         applies = self._target.requirement_applies(requirement, extras=extras)
         if not applies:
             TRACER.log(
-                "Skipping activation of `{}` due to environment marker de-selection".format(
-                    requirement
-                ),
+                f"Skipping activation of `{requirement}` due to environment marker de-selection",
                 V=3,
             )
         return applies
@@ -379,33 +377,15 @@ class PEXEnvironment(object):
         )
 
         for dep_requirement in dist_metadata.requires_dists(resolved_distribution.distribution):
-            # A note regarding extras and why they're passed down one level (we don't pass / use
-            # dep_requirement.extras for example):
-            #
-            # Say we're resolving the `requirement` 'requests[security]==2.25.1'. That means
-            # `resolved_distribution` is the requests distribution. It will have metadata that
-            # looks like so:
-            #
-            # $ grep Requires-Dist requests-2.25.1.dist-info/METADATA | grep security -C1
-            # Requires-Dist: certifi (>=2017.4.17)
-            # Requires-Dist: pyOpenSSL (>=0.14) ; extra == 'security'
-            # Requires-Dist: cryptography (>=1.3.4) ; extra == 'security'
-            # Requires-Dist: PySocks (!=1.5.7,>=1.5.6) ; extra == 'socks'
-            #
-            # We want to recurse and resolve all standard requests requirements but also those that
-            # are part of the 'security' extra. In order to resolve the latter we need to include
-            # the 'security' extra environment marker.
-            required = self._evaluate_marker(dep_requirement, extras=requirement.extras)
-            if not required:
-                continue
-
-            for not_found in self._resolve_requirement(
-                dep_requirement,
-                resolved_dists_by_key,
-                required,
-                required_by=resolved_distribution.distribution,
+            if required := self._evaluate_marker(
+                dep_requirement, extras=requirement.extras
             ):
-                yield not_found
+                yield from self._resolve_requirement(
+                    dep_requirement,
+                    resolved_dists_by_key,
+                    required,
+                    required_by=resolved_distribution.distribution,
+                )
 
     def _root_requirements_iter(self, reqs):
         # type: (Iterable[Requirement]) -> Iterator[QualifiedRequirementOrNotFound]
@@ -447,8 +427,9 @@ class PEXEnvironment(object):
                         project_name=project_name, target=self._target
                     )
                 )
-                unavailable_dists = self._unavailable_dists_by_project_name.get(project_name)
-                if unavailable_dists:
+                if unavailable_dists := self._unavailable_dists_by_project_name.get(
+                    project_name
+                ):
                     message += (
                         "\nFound {count} {distributions} for {project_name} that do not apply:\n"
                         "{unavailable_dists}".format(
@@ -610,10 +591,7 @@ class PEXEnvironment(object):
         # type: (Iterable[Distribution]) -> None
         namespace_packages_by_dist = OrderedDict()
         for dist in resolved_dists:
-            namespace_packages = cls._get_namespace_packages(dist)
-            # NB: Dists can explicitly declare empty namespace packages lists to indicate they have none.
-            # We only care about dists with one or more namespace packages though; thus, the guard.
-            if namespace_packages:
+            if namespace_packages := cls._get_namespace_packages(dist):
                 namespace_packages_by_dist[dist] = namespace_packages
 
         if not namespace_packages_by_dist:
@@ -664,8 +642,8 @@ class PEXEnvironment(object):
     def _activate(self):
         # type: () -> Iterable[Distribution]
 
-        if not any(self._pex == os.path.realpath(path) for path in sys.path):
-            TRACER.log("Adding pex environment to the head of sys.path: {}".format(self._pex))
+        if all(self._pex != os.path.realpath(path) for path in sys.path):
+            TRACER.log(f"Adding pex environment to the head of sys.path: {self._pex}")
             sys.path.insert(0, self._pex)
 
         resolved = self.resolve()
@@ -674,7 +652,7 @@ class PEXEnvironment(object):
             # avoid re-installing duplicate distributions we have in common with them.
             if dist.location in sys.path:
                 continue
-            with TRACER.timed("Activating %s" % dist, V=2):
+            with TRACER.timed(f"Activating {dist}", V=2):
                 if self._pex_info.inherit_path == InheritPath.FALLBACK:
                     # Prepend location to sys.path.
                     #

@@ -104,16 +104,7 @@ def test_no_duplicate_constraints_pex_warnings(
     )
 
 
-@pytest.mark.skipif(
-    not IS_LINUX
-    or not any(
-        (
-            "manylinux2014_x86_64" == platform.platform
-            for platform in PythonInterpreter.get().supported_platforms
-        )
-    ),
-    reason="Test requires a manylinux2014_x86_64 compatible interpreter.",
-)
+@pytest.mark.skipif(not IS_LINUX or all("manylinux2014_x86_64" != platform.platform for platform in PythonInterpreter.get().supported_platforms), reason="Test requires a manylinux2014_x86_64 compatible interpreter.")
 @applicable_pip_versions
 def test_download_platform_issues_1355(
     create_pip,  # type: CreatePip
@@ -310,7 +301,7 @@ def test_pip_pex_interpreter_venv_hash_issue_1885(
     binary_link = os.path.join(str(tmpdir), "python")
     os.symlink(binary, binary_link)
     pip_w_linked_ppp = create_pip(current_interpreter, PEX_PYTHON_PATH=binary_link)
-    print("binary link real path resolves to: {}".format(os.path.realpath(binary_link)))
+    print(f"binary link real path resolves to: {os.path.realpath(binary_link)}")
     venv_contents_hash = hashlib.sha1(
         json.dumps(
             {

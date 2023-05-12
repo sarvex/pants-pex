@@ -390,9 +390,7 @@ def maybe_reexec_pex(interpreter_test):
         resolved = target.resolve_base_interpreter()
         if resolved != target:
             TRACER.log(
-                "Resolved base interpreter of {} from virtual environment at {}".format(
-                    resolved, target.prefix
-                ),
+                f"Resolved base interpreter of {resolved} from virtual environment at {target.prefix}",
                 V=3,
             )
         target = resolved
@@ -401,32 +399,33 @@ def maybe_reexec_pex(interpreter_test):
 
     pythonpath = pex.PEX.stash_pythonpath()
     if pythonpath is not None:
-        TRACER.log("Stashed PYTHONPATH of {}".format(pythonpath), V=2)
+        TRACER.log(f"Stashed PYTHONPATH of {pythonpath}", V=2)
     elif target == current_interpreter:
         TRACER.log(
-            "Using the current interpreter {} since it matches constraints and "
-            "PYTHONPATH is not set.".format(sys.executable)
+            f"Using the current interpreter {sys.executable} since it matches constraints and PYTHONPATH is not set."
         )
         return None
 
     target_binary = target.binary
     cmdline = [target_binary] + sys.argv
     TRACER.log(
-        "Re-executing: "
-        "cmdline={cmdline!r}, "
-        "sys.executable={python!r}, "
-        "PEX_PYTHON={pex_python!r}, "
-        "PEX_PYTHON_PATH={pex_python_path!r}, "
-        "interpreter_constraints={interpreter_constraints!r}"
-        "{pythonpath}".format(
-            cmdline=" ".join(cmdline),
-            python=sys.executable,
-            pex_python=ENV.PEX_PYTHON,
-            pex_python_path=ENV.PEX_PYTHON_PATH,
-            interpreter_constraints=interpreter_test.interpreter_constraints,
-            pythonpath=', (stashed) PYTHONPATH="{}"'.format(pythonpath)
-            if pythonpath is not None
-            else "",
+        (
+            "Re-executing: "
+            "cmdline={cmdline!r}, "
+            "sys.executable={python!r}, "
+            "PEX_PYTHON={pex_python!r}, "
+            "PEX_PYTHON_PATH={pex_python_path!r}, "
+            "interpreter_constraints={interpreter_constraints!r}"
+            "{pythonpath}".format(
+                cmdline=" ".join(cmdline),
+                python=sys.executable,
+                pex_python=ENV.PEX_PYTHON,
+                pex_python_path=ENV.PEX_PYTHON_PATH,
+                interpreter_constraints=interpreter_test.interpreter_constraints,
+                pythonpath=f', (stashed) PYTHONPATH="{pythonpath}"'
+                if pythonpath is not None
+                else "",
+            )
         )
     )
 
@@ -483,7 +482,7 @@ def ensure_venv(
     venv_dir = pex_info.runtime_venv_dir(pex_file=pex.path(), interpreter=pex.interpreter)
     if venv_dir is None:
         raise AssertionError(
-            "Expected PEX-INFO for {} to have the components of a venv directory".format(pex.path())
+            f"Expected PEX-INFO for {pex.path()} to have the components of a venv directory"
         )
     if not pex_info.includes_tools:
         raise ValueError(
@@ -604,7 +603,7 @@ def bootstrap_pex(
             return
 
         interpreter_test = InterpreterTest(entry_point=entry_point, pex_info=pex_info)
-        if not (ENV.PEX_UNZIP or ENV.PEX_TOOLS) and pex_info.venv:
+        if not ENV.PEX_UNZIP and not ENV.PEX_TOOLS and pex_info.venv:
             try:
                 target = find_compatible_interpreter(interpreter_test=interpreter_test)
             except UnsatisfiableInterpreterConstraintsError as e:
@@ -626,8 +625,7 @@ def _activate_pex(
     # type: (...) -> Iterator[str]
 
     if pex_info.venv:
-        for location in _activate_venv_dir(entry_point, venv_dir=venv_dir):
-            yield location
+        yield from _activate_venv_dir(entry_point, venv_dir=venv_dir)
         return
 
     from . import pex

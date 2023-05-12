@@ -333,7 +333,6 @@ class Targets(object):
                     # Build for specific platforms.
                     yield AbbreviatedPlatform.create(platform, manylinux=self.assume_manylinux)
 
-            for complete_platform in self.complete_platforms:
-                yield complete_platform
+            yield from self.complete_platforms
 
         return OrderedSet(iter_targets())

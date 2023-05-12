@@ -64,8 +64,8 @@ def test_find_compatible_interpreters():
     assert [py39, py310] == find_interpreters(path, constraints=[">3.9"])
     assert [py38] == find_interpreters(path, constraints=["<3.9"])
 
-    assert [py310] == find_interpreters(path, constraints=[">{}".format(PY39)])
-    assert [py39] == find_interpreters(path, constraints=[">{}, <{}".format(PY38, PY310)])
+    assert [py310] == find_interpreters(path, constraints=[f">{PY39}"])
+    assert [py39] == find_interpreters(path, constraints=[f">{PY38}, <{PY310}"])
     assert [py310] == find_interpreters(path, constraints=[">=3.10"])
 
     with pytest.raises(UnsatisfiableInterpreterConstraintsError):
@@ -75,7 +75,7 @@ def test_find_compatible_interpreters():
         find_interpreters(path, constraints=[">4"])
 
     with pytest.raises(UnsatisfiableInterpreterConstraintsError):
-        find_interpreters(path, constraints=[">{}, <{}".format(PY38, PY39)])
+        find_interpreters(path, constraints=[f">{PY38}, <{PY39}"])
 
     # All interpreters on PATH including whatever interpreter is currently running.
     all_known_interpreters = set(PythonInterpreter.all())

@@ -130,7 +130,7 @@ class PexInfo(object):
 
         if info is not None and not isinstance(info, dict):
             raise ValueError(
-                "PexInfo can only be seeded with a dict, got: " "%s of type %s" % (info, type(info))
+                f"PexInfo can only be seeded with a dict, got: {info} of type {type(info)}"
             )
         self._pex_info = dict(info) if info else {}  # type: Dict[str, Any]
         self._distributions = self._pex_info.get("distributions", {})  # type: Dict[str, str]
@@ -141,7 +141,9 @@ class PexInfo(object):
 
         requirements = self._pex_info.get("requirements", [])
         if not isinstance(requirements, (list, tuple)):
-            raise ValueError("Expected requirements to be a list, got %s" % type(requirements))
+            raise ValueError(
+                f"Expected requirements to be a list, got {type(requirements)}"
+            )
         self._requirements = OrderedSet(self._parse_requirement_tuple(req) for req in requirements)
 
     def _get_safe(self, key):
@@ -314,13 +316,10 @@ class PexInfo(object):
         This pex info property is used to persist the PEX_PATH environment variable into the pex
         info metadata for reuse within a built pex.
         """
-        pex_paths = self._pex_info.get("pex_paths")
-        if pex_paths:
+        if pex_paths := self._pex_info.get("pex_paths"):
             return tuple(cast("Iterable[str]", pex_paths))
 
-        # Legacy PEX-INFO stored this in a single string as a colon-separated list.
-        pex_path = self._pex_info.get("pex_path")
-        if pex_path:
+        if pex_path := self._pex_info.get("pex_path"):
             return tuple(pex_path.split(":"))
 
         return ()

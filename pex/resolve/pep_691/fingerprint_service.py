@@ -74,14 +74,7 @@ class FingerprintService(object):
                 chunk_size = 100
                 for index in range(0, len(urls), chunk_size):
                     chunk = urls[index : index + chunk_size]
-                    with closing(
-                        conn.execute(
-                            "SELECT url, algorithm, hash FROM hashes WHERE url IN ({})".format(
-                                ", ".join(repeat("?", len(chunk)))
-                            ),
-                            tuple(chunk),
-                        )
-                    ) as cursor:
+                    with closing(conn.execute(f'SELECT url, algorithm, hash FROM hashes WHERE url IN ({", ".join(repeat("?", len(chunk)))})', tuple(chunk))) as cursor:
                         for url, algorithm, hash_ in cursor:
                             yield _FingerprintedURL(
                                 url=url, fingerprint=Fingerprint(algorithm=algorithm, hash=hash_)
@@ -218,9 +211,7 @@ class FingerprintService(object):
 
         # The remaining artifacts have no fingerprint and no endpoint to fetch the data from; so we
         # just return them as-is.
-        for artifact in artifacts_to_fingerprint.values():
-            yield artifact
-
+        yield from artifacts_to_fingerprint.values()
         if not fingerprinted_urls:
             return
 

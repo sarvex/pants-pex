@@ -130,7 +130,7 @@ class DownloadManager(Generic["_A"]):
         )
         with atomic_directory(download_dir, lock_style=self._file_lock_style) as atomic_dir:
             if atomic_dir.is_finalized():
-                TRACER.log("Using cached artifact at {} for {}".format(download_dir, artifact))
+                TRACER.log(f"Using cached artifact at {download_dir} for {artifact}")
             else:
                 legacy_internal_fingerprint = hashing.Sha1()  # Legacy internal
                 internal_fingerprint = hashing.Sha256()  # Internal

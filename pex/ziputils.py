@@ -34,17 +34,17 @@ class _Zip64Error(ZipError):
     def __str__(self):
         # type: () -> str
         message_lines = [self.message] if self.message else []
-        message_lines.append(
-            "The {field} field of the {record_type} record has value {value} indicating Zip64 "
-            "support is required, but Zip64 support is not implemented.".format(
-                record_type=self.record_type,
-                field=self.field,
-                value=self.value,
+        message_lines.extend(
+            (
+                "The {field} field of the {record_type} record has value {value} indicating Zip64 "
+                "support is required, but Zip64 support is not implemented.".format(
+                    record_type=self.record_type,
+                    field=self.field,
+                    value=self.value,
+                ),
+                "Please file an issue at https://github.com/pantsbuild/pex/issues/new that includes "
+                "this full backtrace if you need this support.",
             )
-        )
-        message_lines.append(
-            "Please file an issue at https://github.com/pantsbuild/pex/issues/new that includes "
-            "this full backtrace if you need this support."
         )
         return os.linesep.join(message_lines)
 

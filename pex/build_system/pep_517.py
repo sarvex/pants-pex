@@ -79,11 +79,12 @@ def _get_build_system(
     project_directory,  # type: str
     extra_requirements=None,  # type: Optional[Iterable[str]]
 ):
-    # type: (...) -> Union[BuildSystem, Error]
-    custom_build_system_or_error = load_build_system(
-        target, resolver, project_directory, extra_requirements=extra_requirements
-    )
-    if custom_build_system_or_error:
+    if custom_build_system_or_error := load_build_system(
+        target,
+        resolver,
+        project_directory,
+        extra_requirements=extra_requirements,
+    ):
         return custom_build_system_or_error
     return _default_build_system(pip_version, target, resolver)
 

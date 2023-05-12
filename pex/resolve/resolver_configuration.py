@@ -46,8 +46,7 @@ class ReposConfiguration(object):
         # type: (...) -> ReposConfiguration
         password_entries = []
         for url in itertools.chain(indexes, find_links):
-            password_entry = PasswordEntry.maybe_extract_from_url(url)
-            if password_entry:
+            if password_entry := PasswordEntry.maybe_extract_from_url(url):
                 password_entries.append(password_entry)
 
         return cls(

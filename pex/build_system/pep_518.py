@@ -51,22 +51,23 @@ def _read_build_system_table(
             )
         )
 
-    build_system = data.get("build-system")
-    if not build_system:
+    if build_system := data.get("build-system"):
+        return (
+            BuildSystemTable(
+                requires=tuple(requires),
+                build_backend=build_system.get(
+                    "build-backend", DEFAULT_BUILD_BACKEND
+                ),
+                backend_path=tuple(
+                    os.path.join(os.path.dirname(pyproject_toml), entry)
+                    for entry in build_system.get("backend-path", ())
+                ),
+            )
+            if (requires := build_system.get("requires"))
+            else None
+        )
+    else:
         return None
-
-    requires = build_system.get("requires")
-    if not requires:
-        return None
-
-    return BuildSystemTable(
-        requires=tuple(requires),
-        build_backend=build_system.get("build-backend", DEFAULT_BUILD_BACKEND),
-        backend_path=tuple(
-            os.path.join(os.path.dirname(pyproject_toml), entry)
-            for entry in build_system.get("backend-path", ())
-        ),
-    )
 
 
 @attr.s(frozen=True)

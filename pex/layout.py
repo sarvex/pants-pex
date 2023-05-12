@@ -132,12 +132,12 @@ def _install(
     pex_hash,  # type: str
 ):
     # type: (...) -> str
-    with TRACER.timed("Laying out {}".format(layout)):
+    with TRACER.timed(f"Laying out {layout}"):
         pex = layout.path
         install_to = unzip_dir(pex_root=pex_root, pex_hash=pex_hash)
         with atomic_directory(install_to) as chroot:
             if not chroot.is_finalized():
-                with TRACER.timed("Installing {} to {}".format(pex, install_to)):
+                with TRACER.timed(f"Installing {pex} to {install_to}"):
                     from pex.pex_info import PexInfo
 
                     pex_info = PexInfo.from_pex(pex)
@@ -145,14 +145,10 @@ def _install(
 
                     bootstrap_cache = pex_info.bootstrap_cache
                     if bootstrap_cache is None:
-                        raise AssertionError(
-                            "Expected bootstrap_cache to be populated for {}.".format(layout)
-                        )
+                        raise AssertionError(f"Expected bootstrap_cache to be populated for {layout}.")
                     code_hash = pex_info.code_hash
                     if code_hash is None:
-                        raise AssertionError(
-                            "Expected code_hash to be populated for {}.".format(layout)
-                        )
+                        raise AssertionError(f"Expected code_hash to be populated for {layout}.")
 
                     with atomic_directory(
                         bootstrap_cache, source=layout.bootstrap_strip_prefix()
@@ -250,7 +246,7 @@ class _ZipAppPEX(_Layout):
         self._zfp.extract("__main__.py", dest_dir)
 
     def __str__(self):
-        return "PEX zipfile {}".format(self._path)
+        return f"PEX zipfile {self._path}"
 
 
 class _PackedPEX(_Layout):
@@ -297,7 +293,7 @@ class _PackedPEX(_Layout):
         safe_copy(os.path.join(self._path, "__main__.py"), os.path.join(dest_dir, "__main__.py"))
 
     def __str__(self):
-        return "Spread PEX directory {}".format(self._path)
+        return f"Spread PEX directory {self._path}"
 
 
 @contextmanager

@@ -101,7 +101,7 @@ def test_interpreter_resolution_with_pex_python_path():
     with temporary_dir() as td:
         pexrc_path = os.path.join(td, ".pexrc")
         with open(pexrc_path, "w") as pexrc:
-            pexrc.write("PEX_PYTHON_PATH={}".format(os.pathsep.join([py38, py39])))
+            pexrc.write(f"PEX_PYTHON_PATH={os.pathsep.join([py38, py39])}")
 
         # constraints to build pex cleanly; PPP + pex_bootstrapper.py
         # will use these constraints to override sys.executable on pex re-exec
@@ -111,8 +111,8 @@ def test_interpreter_resolution_with_pex_python_path():
         res = run_pex_command(
             [
                 "--disable-cache",
-                "--rcfile={}".format(pexrc_path),
-                "--interpreter-constraint={}".format(interpreter_constraint),
+                f"--rcfile={pexrc_path}",
+                f"--interpreter-constraint={interpreter_constraint}",
                 "-o",
                 pex_out_path,
             ]
@@ -147,7 +147,13 @@ def test_interpreter_constraints_honored_without_ppp_or_pp(tmpdir):
         ),
     )
     res = run_pex_command(
-        ["--disable-cache", "--interpreter-constraint===%s" % PY310, "-o", pex_out_path], env=env
+        [
+            "--disable-cache",
+            f"--interpreter-constraint==={PY310}",
+            "-o",
+            pex_out_path,
+        ],
+        env=env,
     )
     res.assert_success()
 
@@ -252,13 +258,13 @@ def test_pex_exec_with_pex_python_path_only():
         with open(pexrc_path, "w") as pexrc:
             # set pex python path
             pexrc.write(
-                "PEX_PYTHON_PATH={}".format(
-                    os.pathsep.join([py39, ensure_python_interpreter(PY310)])
-                )
+                f"PEX_PYTHON_PATH={os.pathsep.join([py39, ensure_python_interpreter(PY310)])}"
             )
 
         pex_out_path = os.path.join(td, "pex.pex")
-        res = run_pex_command(["--disable-cache", "--rcfile=%s" % pexrc_path, "-o", pex_out_path])
+        res = run_pex_command(
+            ["--disable-cache", f"--rcfile={pexrc_path}", "-o", pex_out_path]
+        )
         res.assert_success()
 
         # test that pex bootstrapper selects the lowest version interpreter
@@ -308,7 +314,7 @@ def test_pex_python():
     with temporary_dir() as td:
         pexrc_path = os.path.join(td, ".pexrc")
         with open(pexrc_path, "w") as pexrc:
-            pexrc.write("PEX_PYTHON={}".format(py38))
+            pexrc.write(f"PEX_PYTHON={py38}")
 
         # test PEX_PYTHON with valid constraints
         pex_out_path = os.path.join(td, "pex.pex")
@@ -335,7 +341,7 @@ def test_pex_python():
         py310 = ensure_python_interpreter(PY310)
         pexrc_path = os.path.join(td, ".pexrc")
         with open(pexrc_path, "w") as pexrc:
-            pexrc.write("PEX_PYTHON={}".format(py310))
+            pexrc.write(f"PEX_PYTHON={py310}")
 
         pex_out_path = os.path.join(td, "pex2.pex")
         res = run_pex_command(
@@ -355,7 +361,10 @@ def test_pex_python():
         stdin_payload = b"import sys; print(sys.executable); sys.exit(0)"
         stdout, rc = run_simple_pex(pex_out_path, stdin=stdin_payload, env=env)
         assert rc == 1
-        assert "Failed to find a compatible PEX_PYTHON={}.".format(py310) in stdout.decode("utf-8")
+        assert (
+            f"Failed to find a compatible PEX_PYTHON={py310}."
+            in stdout.decode("utf-8")
+        )
 
         # test PEX_PYTHON with no constraints
         pex_out_path = os.path.join(td, "pex3.pex")
@@ -392,7 +401,7 @@ def test_interpreter_selection_using_os_environ_for_bootstrap_reexec(pex_project
 
         # Write parent pex's pexrc.
         with open(pexrc_path, "w") as pexrc:
-            pexrc.write("PEX_PYTHON=%s" % sys.executable)
+            pexrc.write(f"PEX_PYTHON={sys.executable}")
 
         # The code below depends on pex.testing which depends on pytest - make sure the built pex
         # gets this dep.
@@ -462,7 +471,7 @@ def test_interpreter_selection_using_os_environ_for_bootstrap_reexec(pex_project
             [
                 "--disable-cache",
                 pex_project_dir,
-                "{}".format(td),
+                f"{td}",
                 "-e",
                 "testing:tester",
                 "-o",
